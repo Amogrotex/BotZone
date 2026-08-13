@@ -37,10 +37,10 @@ function Navbar() {
           {/* Desktop Nav - pill inside pill */}
           <div className="hidden lg:flex items-center gap-1 bg-black/[0.03] rounded-full p-1">
             {[
-              { label: "امکانات", href: "/#features" },
-              { label: "تعرفه‌ها", href: "/#pricing" },
-              { label: "درباره ما", href: "/#about" },
-              { label: "وبلاگ", href: "/#blog" },
+              { label: "امکانات", href: "/#features", isPage: false },
+              { label: "تعرفه‌ها", href: "/#pricing", isPage: false },
+              { label: "درباره ما", href: "/about", isPage: true },
+              { label: "وبلاگ", href: "/blog", isPage: true },
             ].map((item) => (
               <Link
                 key={item.label}
@@ -84,8 +84,8 @@ function Navbar() {
               {[
                 { label: "امکانات", href: "/#features", icon: "✨" },
                 { label: "تعرفه‌ها", href: "/#pricing", icon: "💳" },
-                { label: "درباره ما", href: "/#about", icon: "👥" },
-                { label: "وبلاگ", href: "/#blog", icon: "📝" },
+                { label: "درباره ما", href: "/about", icon: "👥" },
+                { label: "وبلاگ", href: "/blog", icon: "📝" },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -495,9 +495,17 @@ function CTA() {
 function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const legalPages = ["حریم خصوصی", "قوانین استفاده", "امنیت", "کوکی‌ها"];
 
+  const companyLinks = [
+    { label: "درباره ما", to: "/about" },
+    { label: "وبلاگ", to: "/blog" },
+    { label: "فرصت‌های شغلی", to: "/careers" },
+    { label: "اخبار", to: "/news" },
+    { label: "همکاران", to: "/partners" },
+  ];
+
   const footerLinks = {
     "محصول": ["امکانات", "تعرفه‌ها", "یکپارچه‌سازی", "تغییرات", "مستندات"],
-    "شرکت": ["درباره ما", "وبلاگ", "فرصت‌های شغلی", "اخبار", "همکاران"],
+    "شرکت": companyLinks.map(c => c.label),
     "منابع": ["انجمن", "تماس با ما", "پشتیبانی", "وضعیت سرور", "API"],
     "قوانین": legalPages,
   };
@@ -557,11 +565,22 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
                       </li>
                     );
                   }
+                  // Company links with real routes
+                  const company = companyLinks.find(c => c.label === link);
+                  if (company) {
+                    return (
+                      <li key={link}>
+                        <Link to={company.to} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                          {link}
+                        </Link>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={link}>
-                      <a href="#" className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                      <Link to={`/#${link === "امکانات" ? "features" : link === "درباره ما" ? "about" : ""}`} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
                         {link}
-                      </a>
+                      </Link>
                     </li>
                   );
                 })}
@@ -863,6 +882,183 @@ function NotFoundPage() {
   );
 }
 
+/* ----------------- Company Pages ----------------- */
+
+function PageHero({ title, subtitle, badge }: { title: string; subtitle: string; badge: string }) {
+  return (
+    <section className="relative pt-36 pb-20 bg-white overflow-hidden">
+      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/40 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] bg-gray-300/20 rounded-full blur-[100px]" />
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`,
+        backgroundSize: "60px 60px",
+      }} />
+      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-600 mb-6">
+          <span className="w-2 h-2 rounded-full bg-gray-900" />
+          {badge}
+        </div>
+        <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">{title}</h1>
+        <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">{subtitle}</p>
+      </div>
+    </section>
+  );
+}
+
+function AboutPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  return (
+    <>
+      <PageHero badge="شرکت" title="درباره بات‌زون" subtitle="ما آینده‌ ربات‌های سروش را می‌سازیم — ساده، سریع و امن برای همه‌ تیم‌ها" />
+      <section className="py-20 bg-gray-50 border-t border-black/[0.06]">
+        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">ماموریت ما</h2>
+            <p className="text-gray-500 leading-7 mb-6">
+              بات‌زون در سال ۱۴۰۳ با هدف ساده‌سازی توسعه ربات روی پیام‌رسان سروش آغاز شد. امروز بیش از ۳۰۰ ربات فعال و ۵۰ هزار کاربر روزانه از پلتفرم ما استفاده می‌کنند.
+              ما باور داریم ساخت ربات باید به سادگی نوشتن یک پیام باشد.
+            </p>
+            <div className="flex gap-3">
+              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">⚡ سرعت بالا</div>
+              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">🔒 امنیت</div>
+              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">🤝 تیمی</div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white border border-black/[0.06] p-8 shadow-xl">
+            <div className="grid grid-cols-2 gap-6 text-center">
+              <div><div className="text-3xl font-bold">۱۴۰۳</div><div className="text-xs text-gray-500 mt-1">سال تأسیس</div></div>
+              <div><div className="text-3xl font-bold">۱۲ نفر</div><div className="text-xs text-gray-500 mt-1">اعضای تیم</div></div>
+              <div><div className="text-3xl font-bold">+۳۰۰</div><div className="text-xs text-gray-500 mt-1">ربات فعال</div></div>
+              <div><div className="text-3xl font-bold">۹۹.۹۹٪</div><div className="text-xs text-gray-500 mt-1">آپتایم</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
+function BlogPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  const posts = [
+    { title: "چگونه ربات سروش بسازیم؟ راهنمای کامل ۱۴۰۴", date: "۲۱ مرداد ۱۴۰۴", tag: "آموزش" },
+    { title: "۵ ترفند برای افزایش سرعت پاسخگویی ربات‌ها", date: "۱۵ مرداد ۱۴۰۴", tag: "بهینه‌سازی" },
+    { title: "معرفی نسخه ۲.۰ بات‌زون با قابلیت‌های جدید", date: "۱۰ مرداد ۱۴۰۴", tag: "اخبار" },
+    { title: "امنیت ربات‌ها: بهترین شیوه‌ها", date: "۵ مرداد ۱۴۰۴", tag: "امنیت" },
+    { title: "مقایسه بات‌زون با رقبا", date: "۱ مرداد ۱۴۰۴", tag: "بررسی" },
+    { title: "ساخت فروشگاه رباتیک روی سروش", date: "۲۸ تیر ۱۴۰۴", tag: "کسب‌وکار" },
+  ];
+  return (
+    <>
+      <PageHero badge="وبلاگ" title="وبلاگ بات‌زون" subtitle="آخرین آموزش‌ها، اخبار و ترفندهای ساخت ربات روی سروش" />
+      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
+        <div className="max-w-5xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {posts.map((p) => (
+            <div key={p.title} className="rounded-2xl bg-white border border-black/[0.06] p-6 hover:shadow-xl hover:-translate-y-1 transition-all group">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border border-black/[0.06]">{p.tag}</span>
+                <span className="text-xs text-gray-400">{p.date}</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 leading-relaxed group-hover:text-black">{p.title}</h3>
+              <div className="mt-4 text-xs text-gray-500">۳ دقیقه مطالعه • توسط تیم بات‌زون</div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
+function CareersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  const jobs = [
+    { role: "مهندس بک‌اند (Node.js)", type: "تمام‌وقت • ریموت", loc: "تهران / ریموت" },
+    { role: "طراح محصول UI/UX", type: "تمام‌وقت • حضوری", loc: "تهران" },
+    { role: "متخصص DevOps", type: "پاره‌وقت • ریموت", loc: "ریموت" },
+    { role: "پشتیبان فنی سروش", type: "تمام‌وقت • ریموت", loc: "ریموت / حضوری" },
+  ];
+  return (
+    <>
+      <PageHero badge="فرصت‌های شغلی" title="به تیم بات‌زون بپیوندید" subtitle="ما به دنبال افراد باانگیزه برای ساخت آینده‌ ربات‌ها هستیم" />
+      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
+        <div className="max-w-4xl mx-auto px-6 space-y-4">
+          {jobs.map((job) => (
+            <div key={job.role} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white border border-black/[0.06] p-6 hover:shadow-lg transition-shadow">
+              <div>
+                <h3 className="font-semibold text-gray-900">{job.role}</h3>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{job.type}</span>
+                  <span className="text-xs px-3 py-1 rounded-full bg-white border">{job.loc}</span>
+                </div>
+              </div>
+              <button className="shrink-0 text-sm font-medium bg-gray-900 text-white px-5 py-2.5 rounded-full hover:bg-black transition-colors">ارسال رزومه</button>
+            </div>
+          ))}
+          <div className="mt-10 rounded-2xl bg-gray-900 text-white p-8 text-center">
+            <h4 className="font-bold text-lg mb-2">جایگاه مورد نظرتان را نمی‌بینید؟</h4>
+            <p className="text-sm text-gray-400 mb-4">رزومه خود را برای ما بفرستید، همیشه به استعداد جدید نیاز داریم.</p>
+            <a href="mailto:jobs@botzone.ir" className="text-sm underline" dir="ltr">jobs@botzone.ir</a>
+          </div>
+        </div>
+      </section>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
+function NewsPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  const news = [
+    { date: "۲۲ مرداد ۱۴۰۴", title: "بات‌زون به ۳۰۰ ربات فعال رسید", desc: "رشد ۱۲۰٪ در ۶ ماه گذشته و اضافه شدن قابلیت‌های تیمی." },
+    { date: "۱۸ مرداد ۱۴۰۴", title: "همکاری با سروش برای API جدید", desc: "دسترسی سریع‌تر و پایدارتر به پیام‌رسان سروش." },
+    { date: "۱۰ مرداد ۱۴۰۴", title: "معرفی داشبورد جدید آنالیتیکس", desc: "آمار لحظه‌ای و نمودارهای پیشرفته برای همه ربات‌ها." },
+  ];
+  return (
+    <>
+      <PageHero badge="اخبار" title="آخرین اخبار بات‌زون" subtitle="به‌روزرسانی‌ها، همکاری‌ها و دستاوردهای ما" />
+      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="relative border-r border-black/10 pr-8 space-y-12">
+            {news.map((n) => (
+              <div key={n.title} className="relative">
+                <div className="absolute -right-[37px] top-1 w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white shadow" />
+                <div className="text-xs text-gray-400 mb-1">{n.date}</div>
+                <h3 className="font-semibold text-gray-900 text-lg">{n.title}</h3>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed">{n.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
+function PartnersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  const partners = ["سروش", "تک‌نوآوران", "دیجی‌سرویس", "آسان‌تک", "ابرآروان", "پارس‌پک"];
+  return (
+    <>
+      <PageHero badge="همکاران" title="همکاران ما" subtitle="سازمان‌هایی که به بات‌زون اعتماد کرده‌اند" />
+      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            {partners.map((name) => (
+              <div key={name} className="rounded-2xl bg-white border border-black/[0.06] p-8 flex items-center justify-center h-32 hover:shadow-lg transition-shadow group">
+                <span className="font-bold text-gray-400 group-hover:text-gray-900 transition-colors">{name}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <h3 className="font-semibold mb-2">می‌خواهید همکار ما شوید؟</h3>
+            <p className="text-sm text-gray-500 mb-4">برای همکاری تجاری با ما تماس بگیرید.</p>
+            <a href="https://sapp.ir/Veltorix" target="_blank" className="inline-flex px-6 py-3 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-black">تماس برای همکاری</a>
+          </div>
+        </div>
+      </section>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
 function HomePage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   return (
     <>
@@ -885,6 +1081,11 @@ export default function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="/about" element={<AboutPage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="/blog" element={<BlogPage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="/careers" element={<CareersPage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="/news" element={<NewsPage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="/partners" element={<PartnersPage onOpenLegal={(page) => setLegalPage(page)} />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
         {legalPage && (
