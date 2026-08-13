@@ -1,0 +1,187 @@
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: ["main", "arena/019ffc8a-botzone"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and extract site zip
+        run: |
+          set -x
+          mkdir -p /tmp/dl
+          urls=(
+            "https://filebin.net/archive/w4k58ofremriouz6/zip"
+            "https://store-na-phx-1.gofile.io/download/web/16b0dc3a-a7a8-4737-9cc8-6323bb02f8cc/modern-dark-ui-homepage.zip"
+          )
+          success=0
+          for url in "${urls[@]}"; do
+            echo "Trying $url"
+            rm -f /tmp/site.zip
+            curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" --retry 3 --retry-delay 2 -o /tmp/site.zip "$url" -v
+            if [ -s /tmp/site.zip ]; then
+              echo "Downloaded $(ls -lh /tmp/site.zip)"
+              # check if valid zip by listing
+              if unzip -l /tmp/site.zip >/dev/null 2>&1; then
+                success=1
+                break
+              else
+                echo "Not a valid zip, content:"
+                head -c 500 /tmp/site.zip
+                cat /tmp/site.zip | head -c 1000
+              fi
+            fi
+          done
+
+          # If still not success, try file.kiwi via @file-kiwi/node downloader
+          if [ $success -eq 0 ]; then
+            echo "Trying file.kiwi via @file-kiwi/node..."
+            npm init -y >/dev/null 2>&1 || true
+            npm install @file-kiwi/node
+            node <<'NODE'
+            (async () => {
+              const fs = require('fs');
+              try {
+                const mod = await import('@file-kiwi/node');
+                console.log('Available exports:', Object.keys(mod));
+                // Try different possible APIs
+                let fn = mod.downloadWebFolder || mod.downloadFolder || mod.default?.downloadWebFolder;
+                // fallback: look in lib
+                if (!fn) {
+                  console.log('No downloadWebFolder found, checking package');
+                  // try using createWebFolder download logic manually?
+                  // We'll inspect package files
+                  const pkg = require('@file-kiwi/node/package.json');
+                  console.log(pkg);
+                } else {
+                  const webfolderUrl = "https://file.kiwi/66ee3828#TuTS_712QQvP92sXqAId1g";
+                  console.log('Downloading', webfolderUrl);
+                  await fn(webfolderUrl, {
+                    outputDir: "/tmp/dl",
+                    onProgress: (file, downloaded, total) => console.log(`${file.filename || file.fid}: ${downloaded}/${total}`)
+                  });
+                  console.log("downloadWebFolder done");
+                }
+              } catch (e) {
+                console.error(e);
+                console.error(e.stack);
+                // Try alternative: direct API approach using file.kiwi download logic
+                // For debugging, list /tmp/dl
+              }
+            })();
+          NODE
+            find /tmp/dl -type f | head -100
+            ls -R /tmp/dl | head -200
+            ZIP_FOUND=$(find /tmp/dl -type f -name "*.zip" | head -1)
+            if [ -n "$ZIP_FOUND" ]; then
+              echo "Found zip at $ZIP_FOUND"
+              cp "$ZIP_FOUND" /tmp/site.zip
+              success=1
+            else
+              # Maybe file.kiwi directly extracted files (not zip)
+              if [ -n "$(ls -A /tmp/dl 2>/dev/null)" ]; then
+                echo "Using directly downloaded files from file.kiwi"
+                mkdir -p /tmp/extracted
+                cp -R /tmp/dl/* /tmp/extracted/ || true
+                success=2
+              fi
+            fi
+          fi
+
+          if [ "$success" -eq 0 ]; then
+            echo "Failed to download zip from all sources, exiting"
+            ls -lh /tmp/*
+            exit 1
+          fi
+
+          if [ "$success" -eq 1 ]; then
+            echo "Listing zip contents:"
+            unzip -l /tmp/site.zip | head -200
+            mkdir -p /tmp/extracted
+            unzip -o /tmp/site.zip -d /tmp/extracted
+            ls -R /tmp/extracted | head -500
+          fi
+
+          # Determine content root (folder containing index.html)
+          ROOT=$(find /tmp/extracted -type f -iname "index.html" | head -1 | xargs dirname 2>/dev/null || true)
+          if [ -z "$ROOT" ]; then
+            if [ $(ls -1 /tmp/extracted 2>/dev/null | wc -l) -eq 1 ] && [ -d "/tmp/extracted/$(ls -1 /tmp/extracted 2>/dev/null)" ]; then
+              ROOT="/tmp/extracted/$(ls -1 /tmp/extracted)"
+            else
+              ROOT="/tmp/extracted"
+            fi
+          fi
+          echo "ROOT=$ROOT"
+          ls -la "$ROOT" | head -100
+
+          # Clean repo except .git and .github
+          echo "Cleaning old repo files..."
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' -exec rm -rf {} +
+
+          echo "Copying site files to repo root..."
+          shopt -s dotglob
+          cp -R "$ROOT"/* ./ || true
+          # Try to copy hidden files too (excluding . and ..)
+          cp -R "$ROOT"/.[!.]* ./ 2>/dev/null || true
+          cp -R "$ROOT"/..?* ./ 2>/dev/null || true
+
+          echo "Repo after copy:"
+          ls -la
+          ls -R | head -300
+
+          # Ensure .nojekyll exists for GitHub Pages (to serve all assets)
+          touch .nojekyll
+          # Ensure index.html exists
+          if [ ! -f index.html ] && [ ! -f index.htm ]; then
+            echo "WARNING: No index.html found after extraction"
+            find . -type f | head -50
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Commit extracted files back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add site files from zip for GitHub Pages"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
