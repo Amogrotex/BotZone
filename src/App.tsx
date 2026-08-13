@@ -1,5 +1,40 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+
+/* ---------- Animation helpers ---------- */
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-60px" } as const,
+  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+const staggerContainer = {
+  initial: {},
+  whileInView: { transition: { staggerChildren: 0.08 } },
+  viewport: { once: true, margin: "-80px" } as const,
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true } as const,
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -12,204 +47,161 @@ function Navbar() {
   }, []);
 
   return (
-    <div className="fixed top-4 sm:top-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+    <motion.div
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed top-4 sm:top-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none"
+    >
       <div className="w-full max-w-5xl pointer-events-auto">
-        {/* Pill Navbar - modern floating island */}
-        <nav
-          className={`relative flex items-center justify-between gap-4 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full border transition-all duration-500 ${
-            scrolled
-              ? "bg-white/85 backdrop-blur-2xl border-black/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)]"
-              : "bg-white/70 backdrop-blur-xl border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03)]"
+        <motion.nav
+          animate={{
+            backgroundColor: scrolled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.70)",
+            boxShadow: scrolled
+              ? "0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05)"
+              : "0 4px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)",
+          }}
+          transition={{ duration: 0.4 }}
+          className={`relative flex items-center justify-between gap-4 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full border backdrop-blur-2xl ${
+            scrolled ? "border-black/[0.08]" : "border-black/[0.06]"
           }`}
         >
-          {/* Logo - circular accent */}
           <Link to="/" className="flex items-center gap-2.5 group shrink-0 pl-1">
-            <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10 group-hover:shadow-black/20 group-hover:scale-105 transition-all duration-300">
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: 2 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10"
+            >
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2" />
                 <polyline points="2 17 12 22 22 17" />
                 <polyline points="2 12 12 17 22 12" />
               </svg>
-            </div>
+            </motion.div>
             <span className="text-[17px] font-bold tracking-tight text-gray-900">بات‌زون</span>
           </Link>
 
-          {/* Desktop Nav - pill inside pill */}
           <div className="hidden lg:flex items-center gap-1 bg-black/[0.03] rounded-full p-1">
             {[
-              { label: "امکانات", href: "/#features", isPage: false },
-              { label: "تعرفه‌ها", href: "/#pricing", isPage: false },
-              { label: "درباره ما", href: "/about", isPage: true },
-              { label: "وبلاگ", href: "/blog", isPage: true },
+              { label: "امکانات", href: "/#features" },
+              { label: "تعرفه‌ها", href: "/#pricing" },
+              { label: "درباره ما", href: "/about" },
+              { label: "وبلاگ", href: "/blog" },
             ].map((item) => (
-              <Link
-                key={item.label}
-                to={item.href}
-                className="text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-white px-4 py-2 rounded-full transition-all duration-200"
-              >
+              <Link key={item.label} to={item.href} className="text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-white px-4 py-2 rounded-full transition-all duration-200">
                 {item.label}
               </Link>
             ))}
           </div>
 
-          {/* Desktop CTA - circular buttons */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <Link to="/" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-black/[0.04] transition-all">
               ورود
             </Link>
-            <Link to="/" className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]">
-              شروع کنید
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link to="/" className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] block">
+                شروع کنید
+              </Link>
+            </motion.div>
           </div>
 
-          {/* Mobile Menu Button - circular */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-9 h-9 rounded-full bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 shrink-0"
+            className="md:hidden w-9 h-9 rounded-full bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] flex items-center justify-center text-gray-600"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
+              {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
-          </button>
-        </nav>
+          </motion.button>
+        </motion.nav>
 
-        {/* Mobile Menu - floating circle card */}
-        {menuOpen && (
-          <div className="md:hidden mt-3 p-2 rounded-[24px] bg-white/90 backdrop-blur-2xl border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] animate-[fadeIn_0.2s_ease]">
-            <div className="rounded-[18px] bg-gray-50/80 border border-black/[0.03] p-2 space-y-1">
-              {[
-                { label: "امکانات", href: "/#features", icon: "✨" },
-                { label: "تعرفه‌ها", href: "/#pricing", icon: "💳" },
-                { label: "درباره ما", href: "/about", icon: "👥" },
-                { label: "وبلاگ", href: "/blog", icon: "📝" },
-              ].map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-sm transition-all"
-                >
-                  <span className="w-8 h-8 rounded-full bg-white border border-black/[0.06] flex items-center justify-center text-sm">
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-            <div className="p-2 mt-2 flex items-center gap-2">
-              <button className="flex-1 text-sm font-medium text-gray-600 hover:text-gray-900 bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.06] rounded-full py-3 transition-colors">
-                ورود
-              </button>
-              <button className="flex-1 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-full py-3 shadow-lg shadow-black/10 transition-all">
-                شروع کنید
-              </button>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="md:hidden mt-3 p-2 rounded-[24px] bg-white/90 backdrop-blur-2xl border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.12)]"
+            >
+              <div className="rounded-[18px] bg-gray-50/80 border border-black/[0.03] p-2 space-y-1">
+                {[
+                  { label: "امکانات", href: "/#features", icon: "✨" },
+                  { label: "تعرفه‌ها", href: "/#pricing", icon: "💳" },
+                  { label: "درباره ما", href: "/about", icon: "👥" },
+                  { label: "وبلاگ", href: "/blog", icon: "📝" },
+                ].map((item) => (
+                  <Link key={item.label} to={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-all">
+                    <span className="w-8 h-8 rounded-full bg-white border border-black/[0.06] flex items-center justify-center text-sm">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
-      {/* Subtle light background effects */}
-      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
-
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`,
-        backgroundSize: "60px 60px",
-      }} />
+      <motion.div animate={{ x: [0, 20, 0], y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
+      <motion.div animate={{ x: [0, -15, 0], y: [0, 20, 0] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24">
-        {/* Heading */}
-        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.2] mb-6">
+        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.2] mb-6">
           <span className="text-gray-900">ربات‌های هوشمند</span>
           <br />
-          <span className="bg-gradient-to-r from-gray-900 via-gray-500 to-gray-900 bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">
-            برای سروش
-          </span>
-        </h1>
+          <span className="bg-gradient-to-r from-gray-900 via-gray-500 to-gray-900 bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">برای سروش</span>
+        </motion.h1>
 
-        {/* Subtext */}
-        <p className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-          بات‌زون، پلتفرم طراحی و توسعه ربات‌های حرفه‌ای روی پیام‌رسان سروش.
-          ابزارهای قدرتمند، راه‌اندازی سریع، بدون پیچیدگی.
-        </p>
+        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+          بات‌زون، پلتفرم طراحی و توسعه ربات‌های حرفه‌ای روی پیام‌رسان سروش. ابزارهای قدرتمند، راه‌اندازی سریع، بدون پیچیدگی.
+        </motion.p>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-          <button className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-8 py-4 rounded-full transition-all duration-300 shadow-xl shadow-black/10 hover:shadow-black/20 hover:scale-105">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <motion.button whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }} className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-8 py-4 rounded-full shadow-xl">
             شروع رایگان
-            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
-          <button className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-medium text-gray-600 hover:text-gray-900 bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.06] hover:border-black/10 px-8 py-4 rounded-full transition-all duration-300">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none" />
-            </svg>
-            مشاهده دمو
-          </button>
-        </div>
+            <motion.svg animate={{ x: [0, -3, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></motion.svg>
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-medium text-gray-600 hover:text-gray-900 bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.06] px-8 py-4 rounded-full">مشاهده دمو</motion.button>
+        </motion.div>
 
-        {/* Hero Image / Dashboard Preview */}
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-gray-300/50 to-gray-400/30 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-          <div className="relative rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-2xl shadow-black/10">
-            {/* Fake Browser Bar */}
+        <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }} className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-gray-300/50 to-gray-400/30 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+          <div className="relative rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-2xl">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-black/5 bg-gray-50/80">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                <div className="w-3 h-3 rounded-full bg-green-400" />
-              </div>
-              <div className="flex-1 mx-12">
-                <div className="bg-black/[0.04] rounded-md px-3 py-1 text-xs text-gray-400 text-center max-w-xs mx-auto" dir="ltr">
-                  botzone.ir/dashboard
-                </div>
-              </div>
+              <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400" /><div className="w-3 h-3 rounded-full bg-yellow-400" /><div className="w-3 h-3 rounded-full bg-green-400" /></div>
+              <div className="flex-1 mx-12"><div className="bg-black/[0.04] rounded-md px-3 py-1 text-xs text-gray-400 text-center max-w-xs mx-auto" dir="ltr">botzone.ir/dashboard</div></div>
             </div>
-            {/* Dashboard Content */}
             <div className="p-6 space-y-4 bg-gradient-to-b from-white to-gray-50">
               <div className="grid grid-cols-3 gap-4">
                 {[
                   { label: "پیام‌ها", value: "۴۸,۲۰۰", change: "+۱۲.۵٪", color: "emerald" },
                   { label: "کاربران", value: "۲,۸۴۷", change: "+۸.۱٪", color: "gray" },
                   { label: "آپتایم", value: "۹۹.۹۸٪", change: "+۰.۰۲٪", color: "gray" },
-                ].map((stat) => (
-                  <div key={stat.label} className="rounded-xl bg-white border border-black/[0.06] p-4 shadow-sm">
+                ].map((stat, i) => (
+                  <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.1 }} className="rounded-xl bg-white border border-black/[0.06] p-4 shadow-sm">
                     <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
                     <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                    <span className={`text-xs font-medium ${stat.color === "emerald" ? "text-emerald-500" : "text-gray-500"}`}>
-                      {stat.change}
-                    </span>
-                  </div>
+                    <span className={`text-xs font-medium ${stat.color === "emerald" ? "text-emerald-500" : "text-gray-500"}`}>{stat.change}</span>
+                  </motion.div>
                 ))}
               </div>
-              {/* Fake chart bars */}
-              <div className="rounded-xl bg-white border border-black/[0.06] p-4 h-40 flex items-end gap-2 shadow-sm">
+              <div className="rounded-xl bg-white border border-black/[0.06] p-4 h-40 flex items-end gap-2 shadow-sm overflow-hidden">
                 {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t-md bg-gradient-to-t from-gray-800 to-gray-400"
-                    style={{ height: `${h}%` }}
-                  />
+                  <motion.div key={i} initial={{ height: 0 }} whileInView={{ height: `${h}%` }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.9 + i * 0.05, ease: "easeOut" }} className="flex-1 rounded-t-md bg-gradient-to-t from-gray-800 to-gray-400" />
                 ))}
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-
-      {/* Bottom fade into next section */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-100" />
     </section>
   );
@@ -217,97 +209,41 @@ function Hero() {
 
 function Features() {
   const features = [
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-        </svg>
-      ),
-      title: "سرعت بالا",
-      description: "پاسخگویی در کسری از ثانیه با زیرساخت پیشرفته و بهینه‌سازی شده برای عملکرد حداکثری.",
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-        </svg>
-      ),
-      title: "امنیت بالا",
-      description: "رمزنگاری سرتاسری، کنترل دسترسی مبتنی بر نقش و ثبت کامل لاگ‌های فعالیت.",
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
-        </svg>
-      ),
-      title: "توسعه‌دهنده محور",
-      description: "APIهای جامع، مستندات کامل و ابزارهای یکپارچه‌سازی با سرویس‌های محبوب شما.",
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-        </svg>
-      ),
-      title: "آمار لحظه‌ای",
-      description: "پیگیری عملکرد ربات‌ها با داشبوردهای سفارشی و نمایش داده‌ها به صورت زنده.",
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-        </svg>
-      ),
-      title: "مدیریت تیمی",
-      description: "ابزارهای همکاری تیمی با فضای کار مشترک، نظرات و ویرایش همزمان.",
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-        </svg>
-      ),
-      title: "مقیاس‌پذیری خودکار",
-      description: "زیرساختی که به‌صورت خودکار برای مدیریت هر حجمی از ترافیک مقیاس‌بندی می‌شود.",
-    },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />, title: "سرعت بالا", description: "پاسخگویی در کسری از ثانیه با زیرساخت پیشرفته و بهینه‌سازی شده برای عملکرد حداکثری." },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />, title: "امنیت بالا", description: "رمزنگاری سرتاسری، کنترل دسترسی مبتنی بر نقش و ثبت کامل لاگ‌های فعالیت." },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />, title: "توسعه‌دهنده محور", description: "APIهای جامع، مستندات کامل و ابزارهای یکپارچه‌سازی با سرویس‌های محبوب شما." },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />, title: "آمار لحظه‌ای", description: "پیگیری عملکرد ربات‌ها با داشبوردهای سفارشی و نمایش داده‌ها به صورت زنده." },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />, title: "مدیریت تیمی", description: "ابزارهای همکاری تیمی با فضای کار مشترک، نظرات و ویرایش همزمان." },
+    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />, title: "مقیاس‌پذیری خودکار", description: "زیرساختی که به‌صورت خودکار برای مدیریت هر حجمی از ترافیک مقیاس‌بندی می‌شود." },
   ];
 
   return (
     <section id="features" className="relative py-32 bg-gray-100">
-      {/* Top fade from hero */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
-
       <div className="max-w-7xl mx-auto px-6">
-        {/* Section Header */}
-        <div className="text-center mb-20">
+        <motion.div {...fadeUp} className="text-center mb-20">
           <span className="text-sm font-semibold text-gray-400 tracking-widest mb-4 block">امکانات</span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5">
-            هر آنچه برای ساخت ربات نیاز دارید
-          </h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            امکانات قدرتمند برای توسعه سریع‌تر ربات‌های سروش و ارائه بهترین تجربه به کاربران.
-          </p>
-        </div>
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5">هر آنچه برای ساخت ربات نیاز دارید</h2>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto">امکانات قدرتمند برای توسعه سریع‌تر ربات‌های سروش و ارائه بهترین تجربه به کاربران.</p>
+        </motion.div>
 
-        {/* Feature Cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature) => (
-            <div
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true, margin: "-80px" }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, i) => (
+            <motion.div
               key={feature.title}
-              className="group relative rounded-2xl bg-white border border-black/[0.06] hover:border-black/10 p-8 transition-all duration-500 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1"
+              variants={staggerItem}
+              whileHover={{ y: -6, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.08)" }}
+              className="group relative rounded-2xl bg-white border border-black/[0.06] hover:border-black/10 p-8 transition-colors"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-900 shadow-lg shadow-black/10 mb-5 text-white group-hover:scale-110 transition-transform duration-300">
-                {feature.icon}
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-900 shadow-lg mb-5 text-white group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{feature.icon}</svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{feature.description}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-
-      {/* Bottom fade into darker section */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-300" />
     </section>
   );
@@ -315,75 +251,28 @@ function Features() {
 
 function Stats() {
   const stats = [
-    {
-      value: "۹۹.۹۹٪",
-      label: "آپتایم تضمینی",
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-        </svg>
-      ),
-    },
-    {
-      value: "+۵۰ هزار",
-      label: "کاربر فعال",
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-        </svg>
-      ),
-    },
-    {
-      value: "+۳۰۰",
-      label: "ربات فعال",
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          {/* Modern Bot - clean */}
-          <rect x="4" y="10" width="16" height="10" rx="3" />
-          <path d="M8 10V8.5a4 4 0 014-4h0a4 4 0 014 4V10" />
-          <path d="M12 6V4" />
-          <circle cx="9.25" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
-          <circle cx="14.75" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
-        </svg>
-      ),
-    },
-    {
-      value: "‏<۵۰ms",
-      label: "میانگین تأخیر",
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          {/* Modern Gauge / Speedometer for latency */}
-          <path d="M3.34 19A10 10 0 1120.66 19" />
-          <path d="M12 14V10" />
-          <path d="M12 14l2.8-2.8" />
-          <circle cx="12" cy="14" r="1.2" fill="currentColor" stroke="none" />
-        </svg>
-      ),
-    },
+    { value: "۹۹.۹۹٪", label: "آپتایم تضمینی", icon: <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /> },
+    { value: "+۵۰ هزار", label: "کاربر فعال", icon: <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /> },
+    { value: "+۳۰۰", label: "ربات فعال", icon: (<><rect x="4" y="10" width="16" height="10" rx="3" /><path d="M8 10V8.5a4 4 0 014-4h0a4 4 0 014 4V10" /><path d="M12 6V4" /><circle cx="9.25" cy="15.5" r="1.1" fill="currentColor" /><circle cx="14.75" cy="15.5" r="1.1" fill="currentColor" /></>) },
+    { value: "‏<۵۰ms", label: "میانگین تأخیر", icon: (<><path d="M3.34 19A10 10 0 1120.66 19" /><path d="M12 14V10" /><path d="M12 14l2.8-2.8" /><circle cx="12" cy="14" r="1.2" fill="currentColor" /></>) },
   ];
 
   return (
-    <section className="relative py-24 bg-gray-300">
+    <section className="relative py-24 bg-gray-300 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center group">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:scale-110 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] transition-all duration-300">
-                {stat.icon}
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {stats.map((stat, i) => (
+            <motion.div key={stat.label} variants={staggerItem} custom={i} whileHover={{ scale: 1.05 }} className="text-center group">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">{stat.icon}</svg>
               </div>
-              <div className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 tracking-tight">
-                {stat.value}
-              </div>
-              <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">
-                {stat.label}
-              </div>
-            </div>
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring", stiffness: 120 }} className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 tracking-tight">{stat.value}</motion.div>
+              <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">{stat.label}</div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-      {/* Bottom fade into darker */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-500" />
     </section>
   );
@@ -391,67 +280,31 @@ function Stats() {
 
 function Testimonials() {
   const testimonials = [
-    {
-      quote: "بات‌زون فرایند توسعه ربات‌های ما رو کاملاً متحول کرد. سه برابر سریع‌تر از حد انتظار ربات‌مون رو راه‌اندازی کردیم.",
-      author: "مهدی احمدی",
-      role: "مدیر فنی، تک‌نوآوران",
-      avatar: "https://images.pexels.com/photos/7640741/pexels-photo-7640741.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100",
-    },
-    {
-      quote: "بهترین تجربه توسعه‌ای که داشتم. انگار یه ابرقدرت برای ساخت ربات در اختیارتون قرار میده.",
-      author: "سارا رضایی",
-      role: "توسعه‌دهنده ارشد، دیجی‌سرویس",
-      avatar: "https://images.pexels.com/photos/8837261/pexels-photo-8837261.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100",
-    },
-    {
-      quote: "هزینه‌های زیرساختمون رو ۶۰ درصد کاهش دادیم و در عین حال عملکرد بهتری هم داریم. واقعاً عالیه.",
-      author: "علی محمدی",
-      role: "معاون مهندسی، آسان‌تک",
-      avatar: "https://images.pexels.com/photos/18459701/pexels-photo-18459701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100",
-    },
+    { quote: "بات‌زون فرایند توسعه ربات‌های ما رو کاملاً متحول کرد. سه برابر سریع‌تر از حد انتظار ربات‌مون رو راه‌اندازی کردیم.", author: "مهدی احمدی", role: "مدیر فنی، تک‌نوآوران", avatar: "https://images.pexels.com/photos/7640741/pexels-photo-7640741.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
+    { quote: "بهترین تجربه توسعه‌ای که داشتم. انگار یه ابرقدرت برای ساخت ربات در اختیارتون قرار میده.", author: "سارا رضایی", role: "توسعه‌دهنده ارشد، دیجی‌سرویس", avatar: "https://images.pexels.com/photos/8837261/pexels-photo-8837261.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
+    { quote: "هزینه‌های زیرساختمون رو ۶۰ درصد کاهش دادیم و در عین حال عملکرد بهتری هم داریم. واقعاً عالیه.", author: "علی محمدی", role: "معاون مهندسی، آسان‌تک", avatar: "https://images.pexels.com/photos/18459701/pexels-photo-18459701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
   ];
 
   return (
     <section id="about" className="relative py-32 bg-gray-500">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <motion.div {...fadeUp} className="text-center mb-16">
           <span className="text-sm font-semibold text-gray-200 tracking-widest mb-4 block">نظرات مشتریان</span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-5">
-            مورد اعتماد تیم‌های حرفه‌ای
-          </h2>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((t) => (
-            <div
-              key={t.author}
-              className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-8 hover:bg-white/15 hover:border-white/25 transition-all duration-300"
-            >
-              {/* Stars */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
+          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-5">مورد اعتماد تیم‌های حرفه‌ای</h2>
+        </motion.div>
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid md:grid-cols-3 gap-6">
+          {testimonials.map((t, i) => (
+            <motion.div key={t.author} variants={staggerItem} whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.15)" }} className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-8">
+              <div className="flex gap-1 mb-4">{[...Array(5)].map((_, j) => <motion.svg key={j} initial={{ scale: 0 }} whileInView={{ scale: 1 }} transition={{ delay: i * 0.1 + j * 0.05 }} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></motion.svg>)}</div>
               <p className="text-white/90 leading-relaxed mb-6 text-sm">"{t.quote}"</p>
               <div className="flex items-center gap-3">
-                <img
-                  src={t.avatar}
-                  alt={t.author}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-white/20"
-                />
-                <div>
-                  <p className="text-white font-medium text-sm">{t.author}</p>
-                  <p className="text-white/50 text-xs">{t.role}</p>
-                </div>
+                <img src={t.avatar} alt={t.author} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/20" />
+                <div><p className="text-white font-medium text-sm">{t.author}</p><p className="text-white/50 text-xs">{t.role}</p></div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-      {/* Bottom fade into darker */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-700" />
     </section>
   );
@@ -460,33 +313,15 @@ function Testimonials() {
 function CTA() {
   return (
     <section className="relative py-32 bg-gray-700 overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white/5 rounded-full blur-[120px]" />
-
+      <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white/5 rounded-full blur-[120px]" />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-          آماده‌اید ربات
-          <span className="block bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">
-            خودتون رو بسازید؟
-          </span>
-        </h2>
-        <p className="text-lg text-gray-300 mb-10 max-w-xl mx-auto">
-          به هزاران تیمی بپیوندید که با بات‌زون سریع‌تر ربات می‌سازند.
-          شروع رایگان — بدون نیاز به کارت بانکی.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-semibold text-gray-900 bg-white hover:bg-gray-100 px-8 py-4 rounded-full transition-all duration-300 shadow-xl shadow-black/20 hover:shadow-black/30 hover:scale-105">
-            شروع رایگان
-            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
-          <button className="w-full sm:w-auto text-base font-medium text-gray-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/25 px-8 py-4 rounded-full transition-all duration-300">
-            تماس با فروش
-          </button>
-        </div>
+        <motion.h2 {...fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">آماده‌اید ربات<span className="block bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">خودتون رو بسازید؟</span></motion.h2>
+        <motion.p {...fadeUp} transition={{ delay: 0.1 }} className="text-lg text-gray-300 mb-10 max-w-xl mx-auto">به هزاران تیمی بپیوندید که با بات‌زون سریع‌تر ربات می‌سازند. شروع رایگان — بدون نیاز به کارت بانکی.</motion.p>
+        <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-semibold text-gray-900 bg-white hover:bg-gray-100 px-8 py-4 rounded-full shadow-xl">شروع رایگان <span className="group-hover:-translate-x-1 transition-transform">→</span></motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto text-base font-medium text-gray-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 px-8 py-4 rounded-full">تماس با فروش</motion.button>
+        </motion.div>
       </div>
-      {/* Bottom fade into footer */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-900" />
     </section>
   );
@@ -494,7 +329,6 @@ function CTA() {
 
 function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const legalPages = ["حریم خصوصی", "قوانین استفاده", "امنیت", "کوکی‌ها"];
-
   const companyLinks = [
     { label: "درباره ما", to: "/about" },
     { label: "وبلاگ", to: "/blog" },
@@ -502,113 +336,40 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
     { label: "اخبار", to: "/news" },
     { label: "همکاران", to: "/partners" },
   ];
-
   const footerLinks = {
     "محصول": ["امکانات", "تعرفه‌ها", "یکپارچه‌سازی", "تغییرات", "مستندات"],
     "شرکت": companyLinks.map(c => c.label),
     "منابع": ["انجمن", "تماس با ما", "پشتیبانی", "وضعیت سرور", "API"],
     "قوانین": legalPages,
   };
-
   return (
     <footer className="relative bg-gray-900 pt-20 pb-10">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                <svg className="w-4 h-4 text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-white">بات‌زون</span>
-            </Link>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              ساخت آینده‌ ربات‌ها، روی پیام‌رسان سروش.
-            </p>
-          </div>
-
-          {/* Links */}
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
+          <motion.div variants={staggerItem} className="col-span-2 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2.5 mb-4"><div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center"><svg className="w-4 h-4 text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg></div><span className="text-lg font-bold text-white">بات‌زون</span></Link>
+            <p className="text-sm text-gray-500 leading-relaxed">ساخت آینده‌ ربات‌ها، روی پیام‌رسان سروش.</p>
+          </motion.div>
           {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
+            <motion.div key={category} variants={staggerItem}>
               <h4 className="text-sm font-semibold text-white mb-4">{category}</h4>
               <ul className="space-y-2.5">
                 {links.map((link) => {
-                  if (link === "پشتیبانی") {
-                    return (
-                      <li key={link}>
-                        <a
-                          href="https://sapp.ir/Veltorix"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-gray-500 hover:text-gray-300 transition-colors inline-flex items-center gap-1.5"
-                        >
-                          پشتیبانی
-                          <span className="text-xs text-gray-600" dir="ltr">@Veltorix</span>
-                        </a>
-                      </li>
-                    );
-                  }
-                  if (legalPages.includes(link)) {
-                    return (
-                      <li key={link}>
-                        <button
-                          onClick={() => onOpenLegal(link)}
-                          className="text-sm text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
-                        >
-                          {link}
-                        </button>
-                      </li>
-                    );
-                  }
-                  // Company links with real routes
+                  if (link === "پشتیبانی") return <li key={link}><a href="https://sapp.ir/Veltorix" target="_blank" className="text-sm text-gray-500 hover:text-gray-300 inline-flex gap-1.5">پشتیبانی <span className="text-xs text-gray-600" dir="ltr">@Veltorix</span></a></li>;
+                  if (legalPages.includes(link)) return <li key={link}><button onClick={() => onOpenLegal(link)} className="text-sm text-gray-500 hover:text-gray-300">{link}</button></li>;
                   const company = companyLinks.find(c => c.label === link);
-                  if (company) {
-                    return (
-                      <li key={link}>
-                        <Link to={company.to} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                          {link}
-                        </Link>
-                      </li>
-                    );
-                  }
-                  return (
-                    <li key={link}>
-                      <Link to={`/#${link === "امکانات" ? "features" : link === "درباره ما" ? "about" : ""}`} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                        {link}
-                      </Link>
-                    </li>
-                  );
+                  if (company) return <li key={link}><Link to={company.to} className="text-sm text-gray-500 hover:text-gray-300">{link}</Link></li>;
+                  return <li key={link}><span className="text-sm text-gray-500 hover:text-gray-300">{link}</span></li>;
                 })}
               </ul>
-            </div>
+            </motion.div>
           ))}
-        </div>
-
-        {/* Bottom */}
+        </motion.div>
         <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
-          <p className="text-xs text-gray-600">
-            © ۱۴۰۵ بات‌زون. تمامی حقوق محفوظ است.
-          </p>
+          <p className="text-xs text-gray-600">© ۱۴۰۵ بات‌زون. تمامی حقوق محفوظ است.</p>
           <div className="flex items-center gap-4">
-            {/* Social Icons */}
-            {[
-              <svg key="twitter" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
-              <svg key="github" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>,
-              <svg key="linkedin" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
-            ].map((icon) => (
-              <a
-                key={String(icon.key)}
-                href="#"
-                className="text-gray-600 hover:text-gray-300 transition-colors"
-              >
-                {icon}
-              </a>
-            ))}
+            {["𝕏", "GH", "IN"].map((s) => <div key={s} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-xs hover:text-white hover:bg-white/10 transition-colors cursor-pointer">{s}</div>)}
           </div>
         </div>
       </div>
@@ -617,289 +378,61 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
 }
 
 const legalContent: Record<string, { title: string; sections: { heading: string; body: string }[] }> = {
-  "حریم خصوصی": {
-    title: "سیاست حریم خصوصی",
-    sections: [
-      {
-        heading: "جمع‌آوری اطلاعات",
-        body: "بات‌زون اطلاعات شخصی شما شامل نام، آدرس ایمیل و شماره تلفن را هنگام ثبت‌نام جمع‌آوری می‌کند. این اطلاعات صرفاً برای ارائه خدمات بهتر و ارتباط با شما استفاده می‌شود.",
-      },
-      {
-        heading: "استفاده از اطلاعات",
-        body: "اطلاعات جمع‌آوری شده برای بهبود خدمات، ارسال اطلاع‌رسانی‌های مهم، پشتیبانی فنی و تحلیل آماری عملکرد پلتفرم مورد استفاده قرار می‌گیرد. ما هرگز اطلاعات شما را به اشخاص ثالث نمی‌فروشیم.",
-      },
-      {
-        heading: "حفاظت از داده‌ها",
-        body: "تمامی داده‌های کاربران با استفاده از پروتکل‌های رمزنگاری پیشرفته محافظت می‌شوند. سرورهای ما دارای گواهینامه‌های امنیتی معتبر هستند و به‌صورت مداوم مورد بازرسی قرار می‌گیرند.",
-      },
-      {
-        heading: "حقوق کاربران",
-        body: "شما در هر زمان حق دسترسی، ویرایش و حذف اطلاعات شخصی خود را دارید. برای اعمال این حقوق می‌توانید از طریق پشتیبانی با ما در ارتباط باشید.",
-      },
-    ],
-  },
-  "قوانین استفاده": {
-    title: "قوانین و شرایط استفاده",
-    sections: [
-      {
-        heading: "پذیرش شرایط",
-        body: "با استفاده از خدمات بات‌زون، شما موافقت خود را با تمامی قوانین و شرایط ذکر شده در این صفحه اعلام می‌کنید. در صورت عدم موافقت، لطفاً از استفاده خدمات خودداری کنید.",
-      },
-      {
-        heading: "استفاده مجاز",
-        body: "ربات‌های ساخته شده روی پلتفرم بات‌زون باید مطابق با قوانین جمهوری اسلامی ایران و قوانین پیام‌رسان سروش باشند. هرگونه استفاده غیرقانونی، ارسال هرزنامه یا محتوای نامناسب ممنوع است.",
-      },
-      {
-        heading: "مسئولیت‌ها",
-        body: "بات‌زون مسئولیتی در قبال محتوای تولید شده توسط ربات‌های کاربران ندارد. هر کاربر مسئول عملکرد و محتوای ربات خود می‌باشد.",
-      },
-      {
-        heading: "تعلیق حساب",
-        body: "بات‌زون حق تعلیق یا حذف حساب‌هایی که قوانین استفاده را نقض کنند، بدون اطلاع قبلی محفوظ می‌دارد.",
-      },
-    ],
-  },
-  "امنیت": {
-    title: "سیاست امنیتی",
-    sections: [
-      {
-        heading: "رمزنگاری داده‌ها",
-        body: "تمامی ارتباطات بین کاربران و سرورهای بات‌زون با پروتکل TLS 1.3 رمزنگاری می‌شود. داده‌های حساس در حالت سکون نیز با الگوریتم AES-256 رمزنگاری شده‌اند.",
-      },
-      {
-        heading: "احراز هویت",
-        body: "ما از سیستم احراز هویت چند مرحله‌ای (MFA) پشتیبانی می‌کنیم. توصیه اکید داریم که کاربران این قابلیت را فعال کنند تا امنیت حساب خود را افزایش دهند.",
-      },
-      {
-        heading: "نظارت و پایش",
-        body: "سیستم‌های ما به‌صورت ۲۴ ساعته تحت نظارت هستند. هرگونه فعالیت مشکوک به‌سرعت شناسایی و بررسی می‌شود. لاگ‌های دسترسی به‌مدت ۹۰ روز نگهداری می‌شوند.",
-      },
-      {
-        heading: "گزارش آسیب‌پذیری",
-        body: "اگر آسیب‌پذیری امنیتی در پلتفرم بات‌زون یافتید، لطفاً از طریق پشتیبانی (@Veltorix در سروش) به ما اطلاع دهید. ما برنامه پاداش باگ‌بانتی داریم.",
-      },
-    ],
-  },
-  "کوکی‌ها": {
-    title: "سیاست کوکی‌ها",
-    sections: [
-      {
-        heading: "کوکی چیست؟",
-        body: "کوکی‌ها فایل‌های متنی کوچکی هستند که در مرورگر شما ذخیره می‌شوند. ما از کوکی‌ها برای بهبود تجربه کاربری و عملکرد بهتر سایت استفاده می‌کنیم.",
-      },
-      {
-        heading: "کوکی‌های ضروری",
-        body: "این کوکی‌ها برای عملکرد صحیح وب‌سایت الزامی هستند و شامل احراز هویت، تنظیمات جلسه و ترجیحات زبان می‌شوند. بدون این کوکی‌ها سایت به درستی کار نخواهد کرد.",
-      },
-      {
-        heading: "کوکی‌های تحلیلی",
-        body: "ما از کوکی‌های تحلیلی برای درک نحوه استفاده کاربران از سایت استفاده می‌کنیم. این اطلاعات به ما کمک می‌کند تا خدمات خود را بهبود دهیم.",
-      },
-      {
-        heading: "مدیریت کوکی‌ها",
-        body: "شما می‌توانید تنظیمات کوکی‌ها را از طریق مرورگر خود مدیریت کنید. توجه داشته باشید که غیرفعال کردن برخی کوکی‌ها ممکن است بر عملکرد سایت تأثیر بگذارد.",
-      },
-    ],
-  },
+  "حریم خصوصی": { title: "سیاست حریم خصوصی", sections: [{ heading: "جمع‌آوری اطلاعات", body: "بات‌زون اطلاعات شخصی شما شامل نام، آدرس ایمیل و شماره تلفن را هنگام ثبت‌نام جمع‌آوری می‌کند." }, { heading: "استفاده از اطلاعات", body: "اطلاعات برای بهبود خدمات و پشتیبانی فنی استفاده می‌شود." }, { heading: "حفاظت از داده‌ها", body: "تمامی داده‌ها با پروتکل‌های رمزنگاری پیشرفته محافظت می‌شوند." }, { heading: "حقوق کاربران", body: "شما حق دسترسی و حذف اطلاعات خود را دارید." }] },
+  "قوانین استفاده": { title: "قوانین و شرایط استفاده", sections: [{ heading: "پذیرش شرایط", body: "با استفاده از خدمات بات‌زون، موافقت خود را با قوانین اعلام می‌کنید." }, { heading: "استفاده مجاز", body: "ربات‌ها باید مطابق قوانین ایران و سروش باشند." }, { heading: "مسئولیت‌ها", body: "هر کاربر مسئول ربات خود می‌باشد." }, { heading: "تعلیق حساب", body: "حق تعلیق حساب‌های متخلف محفوظ است." }] },
+  "امنیت": { title: "سیاست امنیتی", sections: [{ heading: "رمزنگاری داده‌ها", body: "ارتباطات با TLS 1.3 و AES-256 رمزنگاری می‌شود." }, { heading: "احراز هویت", body: "از احراز هویت چند مرحله‌ای پشتیبانی می‌کنیم." }, { heading: "نظارت و پایش", body: "سیستم‌ها ۲۴ ساعته نظارت می‌شوند." }, { heading: "گزارش آسیب‌پذیری", body: "از طریق پشتیبانی گزارش دهید." }] },
+  "کوکی‌ها": { title: "سیاست کوکی‌ها", sections: [{ heading: "کوکی چیست؟", body: "فایل‌های متنی کوچک در مرورگر شما." }, { heading: "کوکی‌های ضروری", body: "برای عملکرد صحیح الزامی هستند." }, { heading: "کوکی‌های تحلیلی", body: "برای تحلیل استفاده کاربران." }, { heading: "مدیریت کوکی‌ها", body: "می‌توانید از طریق مرورگر مدیریت کنید." }] },
 };
 
 function LegalModal({ page, onClose }: { page: string; onClose: () => void }) {
-  const content = legalContent[page];
-  if (!content) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
-      {/* Backdrop */}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* Modal */}
-      <div
-        className="relative w-full max-w-2xl max-h-[85vh] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden animate-fadeIn"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/[0.02]">
-          <h2 className="text-xl font-bold text-white">{content.title}</h2>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="relative w-full max-w-2xl max-h-[85vh] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/[0.02]"><h2 className="text-xl font-bold text-white">{legalContent[page]?.title}</h2><button onClick={onClose} className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400">✕</button></div>
+        <div className="px-8 py-6 overflow-y-auto max-h-[calc(85vh-80px)] space-y-6">
+          {legalContent[page]?.sections.map((s, i) => <div key={i}><h3 className="text-white font-semibold mb-2">{i + 1}. {s.heading}</h3><p className="text-sm text-gray-400 leading-7">{s.body}</p></div>)}
         </div>
-
-        {/* Content */}
-        <div className="px-8 py-6 overflow-y-auto max-h-[calc(85vh-80px)] space-y-8">
-          {content.sections.map((section, i) => (
-            <div key={i}>
-              <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-xs text-gray-400 font-mono">
-                  {i + 1}
-                </span>
-                {section.heading}
-              </h3>
-              <p className="text-sm text-gray-400 leading-7 pr-8">{section.body}</p>
-            </div>
-          ))}
-
-          {/* Support note */}
-          <div className="rounded-xl bg-white/[0.03] border border-white/5 p-5 flex items-start gap-3">
-            <span className="text-lg mt-0.5">💬</span>
-            <div>
-              <p className="text-sm text-gray-300 font-medium mb-1">سؤالی دارید؟</p>
-              <p className="text-xs text-gray-500">
-                برای هرگونه سؤال در مورد این سیاست، با پشتیبانی ما تماس بگیرید:{" "}
-                <a
-                  href="https://sapp.ir/Veltorix"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-white transition-colors"
-                  dir="ltr"
-                >
-                  @Veltorix
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 function NotFoundPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
   return (
     <div className="relative min-h-screen bg-white overflow-hidden flex flex-col">
-      {/* Background Effects - same as Hero */}
       <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`,
-        backgroundSize: "60px 60px",
-      }} />
-
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-32 text-center">
-        {/* 404 Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-500 mb-8">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          خطای ۴۰۴ — صفحه یافت نشد
-        </div>
-
-        {/* Big 404 Circle Design - Modern Style */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-200/50 to-gray-300/30 rounded-full blur-[40px] scale-110" />
-          <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] flex items-center justify-center">
-            <span className="text-5xl sm:text-6xl font-black tracking-tight bg-gradient-to-br from-gray-900 via-gray-600 to-gray-400 bg-clip-text text-transparent">
-              ۴۰۴
-            </span>
-          </div>
-          {/* Floating small circles */}
-          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-900 shadow-lg flex items-center justify-center">
-            <span className="text-[10px]">⚠️</span>
-          </div>
-          <div className="absolute -bottom-1 -left-3 w-8 h-8 rounded-full bg-white border border-black/[0.06] shadow-md flex items-center justify-center text-gray-400">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75L4.5 4.5m0 0l5.25 5.25m-5.25-5.25v4.5m4.5-4.5h4.5m-9 9l5.25 5.25m-5.25-5.25v-4.5m4.5 4.5h4.5" />
-            </svg>
-          </div>
-        </div>
-
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-4">
-          صفحه مورد نظر
-          <br />
-          <span className="bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 bg-clip-text text-transparent">
-            پیدا نشد
-          </span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-gray-500 max-w-md mx-auto mb-3 leading-relaxed">
-          متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد یا جابه‌جا شده است.
-        </p>
-        
-        {/* Show attempted path */}
-        <div className="mb-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.06] text-xs font-mono text-gray-500 max-w-full truncate">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-          </svg>
-          <span dir="ltr" className="truncate">{location.pathname}</span>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="group inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black px-7 py-3.5 rounded-full transition-all duration-300 shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-            بازگشت به خانه
-          </button>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.06] hover:border-black/10 px-7 py-3.5 rounded-full transition-all duration-300"
-          >
-            بازگشت به صفحه قبل
-          </button>
-        </div>
-
-        {/* Helpful Links - circular pills */}
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-2 max-w-lg">
-          <span className="text-xs text-gray-400 w-full text-center mb-2">شاید به دنبال این باشید:</span>
-          {[
-            { label: "امکانات", to: "/#features" },
-            { label: "تعرفه‌ها", to: "/#pricing" },
-            { label: "مستندات", to: "/" },
-            { label: "پشتیبانی", to: "https://sapp.ir/Veltorix", external: true },
-          ].map((link) =>
-            link.external ? (
-              <a
-                key={link.label}
-                href={link.to}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-black/[0.06] hover:border-black/10 px-4 py-2 rounded-full transition-all"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link
-                key={link.label}
-                to={link.to}
-                className="text-xs font-medium text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-black/[0.06] hover:border-black/10 px-4 py-2 rounded-full transition-all"
-              >
-                {link.label}
-              </Link>
-            )
-          )}
-        </div>
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 120 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-500 mb-8">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> خطای ۴۰۴ — صفحه یافت نشد
+        </motion.div>
+        <motion.div initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.2 }} className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.08)] flex items-center justify-center mb-8">
+          <span className="text-5xl sm:text-6xl font-black bg-gradient-to-br from-gray-900 via-gray-600 to-gray-400 bg-clip-text text-transparent">۴۰۴</span>
+        </motion.div>
+        <motion.h1 {...fadeUp} className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-4">صفحه مورد نظر<br /><span className="bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 bg-clip-text text-transparent">پیدا نشد</span></motion.h1>
+        <motion.p {...fadeUp} transition={{ delay: 0.1 }} className="text-base sm:text-lg text-gray-500 max-w-md mx-auto mb-3">متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد.</motion.p>
+        <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="mb-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.06] text-xs font-mono text-gray-500"><span dir="ltr">{location.pathname}</span></motion.div>
+        <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-3">
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate("/")} className="text-sm font-semibold text-white bg-gray-900 px-7 py-3.5 rounded-full shadow-xl">بازگشت به خانه</motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="text-sm font-medium text-gray-600 bg-black/[0.04] border border-black/[0.06] px-7 py-3.5 rounded-full">بازگشت قبل</motion.button>
+        </motion.div>
       </div>
     </div>
   );
 }
 
-/* ----------------- Company Pages ----------------- */
-
 function PageHero({ title, subtitle, badge }: { title: string; subtitle: string; badge: string }) {
   return (
     <section className="relative pt-36 pb-20 bg-white overflow-hidden">
-      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/40 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] bg-gray-300/20 rounded-full blur-[100px]" />
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`,
-        backgroundSize: "60px 60px",
-      }} />
+      <motion.div animate={{ x: [0, 15, 0], y: [0, -10, 0] }} transition={{ duration: 7, repeat: Infinity }} className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/40 rounded-full blur-[120px]" />
+      <motion.div animate={{ x: [0, -10, 0], y: [0, 15, 0] }} transition={{ duration: 8, repeat: Infinity }} className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] bg-gray-300/20 rounded-full blur-[100px]" />
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-600 mb-6">
-          <span className="w-2 h-2 rounded-full bg-gray-900" />
-          {badge}
-        </div>
-        <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">{title}</h1>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">{subtitle}</p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-600 mb-6"><span className="w-2 h-2 rounded-full bg-gray-900" />{badge}</motion.div>
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }} className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">{title}</motion.h1>
+        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }} className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">{subtitle}</motion.p>
       </div>
     </section>
   );
@@ -907,65 +440,48 @@ function PageHero({ title, subtitle, badge }: { title: string; subtitle: string;
 
 function AboutPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   return (
-    <>
-      <PageHero badge="شرکت" title="درباره بات‌زون" subtitle="ما آینده‌ ربات‌های سروش را می‌سازیم — ساده، سریع و امن برای همه‌ تیم‌ها" />
+    <PageTransition>
+      <PageHero badge="شرکت" title="درباره بات‌زون" subtitle="ما آینده‌ ربات‌های سروش را می‌سازیم — ساده، سریع و امن" />
       <section className="py-20 bg-gray-50 border-t border-black/[0.06]">
         <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">ماموریت ما</h2>
-            <p className="text-gray-500 leading-7 mb-6">
-              بات‌زون در سال ۱۴۰۳ با هدف ساده‌سازی توسعه ربات روی پیام‌رسان سروش آغاز شد. امروز بیش از ۳۰۰ ربات فعال و ۵۰ هزار کاربر روزانه از پلتفرم ما استفاده می‌کنند.
-              ما باور داریم ساخت ربات باید به سادگی نوشتن یک پیام باشد.
-            </p>
-            <div className="flex gap-3">
-              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">⚡ سرعت بالا</div>
-              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">🔒 امنیت</div>
-              <div className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm">🤝 تیمی</div>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white border border-black/[0.06] p-8 shadow-xl">
-            <div className="grid grid-cols-2 gap-6 text-center">
-              <div><div className="text-3xl font-bold">۱۴۰۳</div><div className="text-xs text-gray-500 mt-1">سال تأسیس</div></div>
-              <div><div className="text-3xl font-bold">۱۲ نفر</div><div className="text-xs text-gray-500 mt-1">اعضای تیم</div></div>
-              <div><div className="text-3xl font-bold">+۳۰۰</div><div className="text-xs text-gray-500 mt-1">ربات فعال</div></div>
-              <div><div className="text-3xl font-bold">۹۹.۹۹٪</div><div className="text-xs text-gray-500 mt-1">آپتایم</div></div>
-            </div>
-          </div>
+          <motion.div {...fadeUp}><h2 className="text-3xl font-bold mb-4">ماموریت ما</h2><p className="text-gray-500 leading-7">بات‌زون در ۱۴۰۳ با هدف ساده‌سازی توسعه ربات روی سروش آغاز شد. امروز بیش از ۳۰۰ ربات فعال داریم.</p></motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="rounded-2xl bg-white border p-8 shadow-xl grid grid-cols-2 gap-6 text-center">
+            <div><div className="text-3xl font-bold">۱۴۰۳</div><div className="text-xs text-gray-500">سال تأسیس</div></div>
+            <div><div className="text-3xl font-bold">۱۲ نفر</div><div className="text-xs text-gray-500">اعضای تیم</div></div>
+            <div><div className="text-3xl font-bold">+۳۰۰</div><div className="text-xs text-gray-500">ربات فعال</div></div>
+            <div><div className="text-3xl font-bold">۹۹.۹۹٪</div><div className="text-xs text-gray-500">آپتایم</div></div>
+          </motion.div>
         </div>
       </section>
       <Footer onOpenLegal={onOpenLegal} />
-    </>
+    </PageTransition>
   );
 }
 
 function BlogPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const posts = [
     { title: "چگونه ربات سروش بسازیم؟ راهنمای کامل ۱۴۰۴", date: "۲۱ مرداد ۱۴۰۴", tag: "آموزش" },
-    { title: "۵ ترفند برای افزایش سرعت پاسخگویی ربات‌ها", date: "۱۵ مرداد ۱۴۰۴", tag: "بهینه‌سازی" },
-    { title: "معرفی نسخه ۲.۰ بات‌زون با قابلیت‌های جدید", date: "۱۰ مرداد ۱۴۰۴", tag: "اخبار" },
+    { title: "۵ ترفند برای افزایش سرعت ربات‌ها", date: "۱۵ مرداد ۱۴۰۴", tag: "بهینه‌سازی" },
+    { title: "معرفی نسخه ۲.۰ بات‌زون", date: "۱۰ مرداد ۱۴۰۴", tag: "اخبار" },
     { title: "امنیت ربات‌ها: بهترین شیوه‌ها", date: "۵ مرداد ۱۴۰۴", tag: "امنیت" },
     { title: "مقایسه بات‌زون با رقبا", date: "۱ مرداد ۱۴۰۴", tag: "بررسی" },
-    { title: "ساخت فروشگاه رباتیک روی سروش", date: "۲۸ تیر ۱۴۰۴", tag: "کسب‌وکار" },
+    { title: "ساخت فروشگاه رباتیک", date: "۲۸ تیر ۱۴۰۴", tag: "کسب‌وکار" },
   ];
   return (
-    <>
-      <PageHero badge="وبلاگ" title="وبلاگ بات‌زون" subtitle="آخرین آموزش‌ها، اخبار و ترفندهای ساخت ربات روی سروش" />
-      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <PageTransition>
+      <PageHero badge="وبلاگ" title="وبلاگ بات‌زون" subtitle="آخرین آموزش‌ها و اخبار" />
+      <section className="py-16 bg-gray-50 border-t">
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-5xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((p) => (
-            <div key={p.title} className="rounded-2xl bg-white border border-black/[0.06] p-6 hover:shadow-xl hover:-translate-y-1 transition-all group">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border border-black/[0.06]">{p.tag}</span>
-                <span className="text-xs text-gray-400">{p.date}</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 leading-relaxed group-hover:text-black">{p.title}</h3>
-              <div className="mt-4 text-xs text-gray-500">۳ دقیقه مطالعه • توسط تیم بات‌زون</div>
-            </div>
+            <motion.div key={p.title} variants={staggerItem} whileHover={{ y: -6 }} className="rounded-2xl bg-white border p-6 hover:shadow-xl transition-all">
+              <div className="flex justify-between mb-4"><span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{p.tag}</span><span className="text-xs text-gray-400">{p.date}</span></div>
+              <h3 className="font-semibold leading-relaxed">{p.title}</h3>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
       <Footer onOpenLegal={onOpenLegal} />
-    </>
+    </PageTransition>
   );
 }
 
@@ -974,88 +490,53 @@ function CareersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
     { role: "مهندس بک‌اند (Node.js)", type: "تمام‌وقت • ریموت", loc: "تهران / ریموت" },
     { role: "طراح محصول UI/UX", type: "تمام‌وقت • حضوری", loc: "تهران" },
     { role: "متخصص DevOps", type: "پاره‌وقت • ریموت", loc: "ریموت" },
-    { role: "پشتیبان فنی سروش", type: "تمام‌وقت • ریموت", loc: "ریموت / حضوری" },
+    { role: "پشتیبان فنی", type: "تمام‌وقت • ریموت", loc: "ریموت" },
   ];
   return (
-    <>
-      <PageHero badge="فرصت‌های شغلی" title="به تیم بات‌زون بپیوندید" subtitle="ما به دنبال افراد باانگیزه برای ساخت آینده‌ ربات‌ها هستیم" />
-      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-4xl mx-auto px-6 space-y-4">
+    <PageTransition>
+      <PageHero badge="فرصت‌های شغلی" title="به تیم ما بپیوندید" subtitle="افراد باانگیزه برای ساخت آینده‌ ربات‌ها" />
+      <section className="py-16 bg-gray-50 border-t">
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-4xl mx-auto px-6 space-y-4">
           {jobs.map((job) => (
-            <div key={job.role} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white border border-black/[0.06] p-6 hover:shadow-lg transition-shadow">
-              <div>
-                <h3 className="font-semibold text-gray-900">{job.role}</h3>
-                <div className="flex gap-2 mt-2">
-                  <span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{job.type}</span>
-                  <span className="text-xs px-3 py-1 rounded-full bg-white border">{job.loc}</span>
-                </div>
-              </div>
-              <button className="shrink-0 text-sm font-medium bg-gray-900 text-white px-5 py-2.5 rounded-full hover:bg-black transition-colors">ارسال رزومه</button>
-            </div>
+            <motion.div key={job.role} variants={staggerItem} whileHover={{ scale: 1.01 }} className="flex flex-col sm:flex-row justify-between gap-4 rounded-2xl bg-white border p-6">
+              <div><h3 className="font-semibold">{job.role}</h3><div className="flex gap-2 mt-2"><span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{job.type}</span><span className="text-xs px-3 py-1 rounded-full bg-white border">{job.loc}</span></div></div>
+              <button className="text-sm bg-gray-900 text-white px-5 py-2.5 rounded-full">ارسال رزومه</button>
+            </motion.div>
           ))}
-          <div className="mt-10 rounded-2xl bg-gray-900 text-white p-8 text-center">
-            <h4 className="font-bold text-lg mb-2">جایگاه مورد نظرتان را نمی‌بینید؟</h4>
-            <p className="text-sm text-gray-400 mb-4">رزومه خود را برای ما بفرستید، همیشه به استعداد جدید نیاز داریم.</p>
-            <a href="mailto:jobs@botzone.ir" className="text-sm underline" dir="ltr">jobs@botzone.ir</a>
-          </div>
-        </div>
+        </motion.div>
       </section>
       <Footer onOpenLegal={onOpenLegal} />
-    </>
+    </PageTransition>
   );
 }
 
 function NewsPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const news = [
-    { date: "۲۲ مرداد ۱۴۰۴", title: "بات‌زون به ۳۰۰ ربات فعال رسید", desc: "رشد ۱۲۰٪ در ۶ ماه گذشته و اضافه شدن قابلیت‌های تیمی." },
-    { date: "۱۸ مرداد ۱۴۰۴", title: "همکاری با سروش برای API جدید", desc: "دسترسی سریع‌تر و پایدارتر به پیام‌رسان سروش." },
-    { date: "۱۰ مرداد ۱۴۰۴", title: "معرفی داشبورد جدید آنالیتیکس", desc: "آمار لحظه‌ای و نمودارهای پیشرفته برای همه ربات‌ها." },
+    { date: "۲۲ مرداد ۱۴۰۴", title: "بات‌زون به ۳۰۰ ربات فعال رسید", desc: "رشد ۱۲۰٪ در ۶ ماه." },
+    { date: "۱۸ مرداد ۱۴۰۴", title: "همکاری با سروش برای API جدید", desc: "دسترسی سریع‌تر." },
+    { date: "۱۰ مرداد ۱۴۰۴", title: "داشبورد جدید آنالیتیکس", desc: "آمار لحظه‌ای پیشرفته." },
   ];
   return (
-    <>
-      <PageHero badge="اخبار" title="آخرین اخبار بات‌زون" subtitle="به‌روزرسانی‌ها، همکاری‌ها و دستاوردهای ما" />
-      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="relative border-r border-black/10 pr-8 space-y-12">
-            {news.map((n) => (
-              <div key={n.title} className="relative">
-                <div className="absolute -right-[37px] top-1 w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white shadow" />
-                <div className="text-xs text-gray-400 mb-1">{n.date}</div>
-                <h3 className="font-semibold text-gray-900 text-lg">{n.title}</h3>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">{n.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+    <PageTransition>
+      <PageHero badge="اخبار" title="آخرین اخبار" subtitle="به‌روزرسانی‌ها و دستاوردها" />
+      <section className="py-16 bg-gray-50 border-t"><div className="max-w-3xl mx-auto px-6 border-r border-black/10 pr-8 space-y-12">{news.map((n, i) => <motion.div key={n.title} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="relative"><div className="absolute -right-[37px] w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white" /><div className="text-xs text-gray-400">{n.date}</div><h3 className="font-semibold text-lg">{n.title}</h3><p className="text-sm text-gray-500 mt-2">{n.desc}</p></motion.div>)}</div></section>
       <Footer onOpenLegal={onOpenLegal} />
-    </>
+    </PageTransition>
   );
 }
 
 function PartnersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const partners = ["سروش", "تک‌نوآوران", "دیجی‌سرویس", "آسان‌تک", "ابرآروان", "پارس‌پک"];
   return (
-    <>
+    <PageTransition>
       <PageHero badge="همکاران" title="همکاران ما" subtitle="سازمان‌هایی که به بات‌زون اعتماد کرده‌اند" />
-      <section className="py-16 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {partners.map((name) => (
-              <div key={name} className="rounded-2xl bg-white border border-black/[0.06] p-8 flex items-center justify-center h-32 hover:shadow-lg transition-shadow group">
-                <span className="font-bold text-gray-400 group-hover:text-gray-900 transition-colors">{name}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <h3 className="font-semibold mb-2">می‌خواهید همکار ما شوید؟</h3>
-            <p className="text-sm text-gray-500 mb-4">برای همکاری تجاری با ما تماس بگیرید.</p>
-            <a href="https://sapp.ir/Veltorix" target="_blank" className="inline-flex px-6 py-3 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-black">تماس برای همکاری</a>
-          </div>
-        </div>
+      <section className="py-16 bg-gray-50 border-t">
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-6">
+          {partners.map((name) => <motion.div key={name} variants={staggerItem} whileHover={{ y: -4, scale: 1.02 }} className="rounded-2xl bg-white border p-8 h-32 flex items-center justify-center hover:shadow-lg"><span className="font-bold text-gray-400">{name}</span></motion.div>)}
+        </motion.div>
       </section>
       <Footer onOpenLegal={onOpenLegal} />
-    </>
+    </PageTransition>
   );
 }
 
@@ -1072,25 +553,33 @@ function HomePage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   );
 }
 
+function AnimatedRoutes({ onOpenLegal }: { onOpenLegal: (p: string) => void }) {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><HomePage onOpenLegal={onOpenLegal} /></PageTransition>} />
+        <Route path="/about" element={<AboutPage onOpenLegal={onOpenLegal} />} />
+        <Route path="/blog" element={<BlogPage onOpenLegal={onOpenLegal} />} />
+        <Route path="/careers" element={<CareersPage onOpenLegal={onOpenLegal} />} />
+        <Route path="/news" element={<NewsPage onOpenLegal={onOpenLegal} />} />
+        <Route path="/partners" element={<PartnersPage onOpenLegal={onOpenLegal} />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   const [legalPage, setLegalPage] = useState<string | null>(null);
-
   return (
     <BrowserRouter basename="/BotZone">
-      <div className="antialiased">
+      <div className="antialiased overflow-x-hidden">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="/about" element={<AboutPage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="/blog" element={<BlogPage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="/careers" element={<CareersPage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="/news" element={<NewsPage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="/partners" element={<PartnersPage onOpenLegal={(page) => setLegalPage(page)} />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        {legalPage && (
-          <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />
-        )}
+        <AnimatedRoutes onOpenLegal={(p) => setLegalPage(p)} />
+        <AnimatePresence>
+          {legalPage && <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />}
+        </AnimatePresence>
       </div>
     </BrowserRouter>
   );
