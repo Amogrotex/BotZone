@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -22,7 +23,7 @@ function Navbar() {
           }`}
         >
           {/* Logo - circular accent */}
-          <a href="#" className="flex items-center gap-2.5 group shrink-0 pl-1">
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0 pl-1">
             <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10 group-hover:shadow-black/20 group-hover:scale-105 transition-all duration-300">
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -31,34 +32,34 @@ function Navbar() {
               </svg>
             </div>
             <span className="text-[17px] font-bold tracking-tight text-gray-900">بات‌زون</span>
-          </a>
+          </Link>
 
           {/* Desktop Nav - pill inside pill */}
           <div className="hidden lg:flex items-center gap-1 bg-black/[0.03] rounded-full p-1">
             {[
-              { label: "امکانات", href: "#features" },
-              { label: "تعرفه‌ها", href: "#pricing" },
-              { label: "درباره ما", href: "#about" },
-              { label: "وبلاگ", href: "#blog" },
+              { label: "امکانات", href: "/#features" },
+              { label: "تعرفه‌ها", href: "/#pricing" },
+              { label: "درباره ما", href: "/#about" },
+              { label: "وبلاگ", href: "/#blog" },
             ].map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
+                to={item.href}
                 className="text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-white px-4 py-2 rounded-full transition-all duration-200"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
 
           {/* Desktop CTA - circular buttons */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
-            <button className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-black/[0.04] transition-all">
+            <Link to="/" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-black/[0.04] transition-all">
               ورود
-            </button>
-            <button className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]">
+            </Link>
+            <Link to="/" className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]">
               شروع کنید
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button - circular */}
@@ -81,14 +82,14 @@ function Navbar() {
           <div className="md:hidden mt-3 p-2 rounded-[24px] bg-white/90 backdrop-blur-2xl border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] animate-[fadeIn_0.2s_ease]">
             <div className="rounded-[18px] bg-gray-50/80 border border-black/[0.03] p-2 space-y-1">
               {[
-                { label: "امکانات", href: "#features", icon: "✨" },
-                { label: "تعرفه‌ها", href: "#pricing", icon: "💳" },
-                { label: "درباره ما", href: "#about", icon: "👥" },
-                { label: "وبلاگ", href: "#blog", icon: "📝" },
+                { label: "امکانات", href: "/#features", icon: "✨" },
+                { label: "تعرفه‌ها", href: "/#pricing", icon: "💳" },
+                { label: "درباره ما", href: "/#about", icon: "👥" },
+                { label: "وبلاگ", href: "/#blog", icon: "📝" },
               ].map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.href}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-sm transition-all"
                 >
@@ -96,7 +97,7 @@ function Navbar() {
                     {item.icon}
                   </span>
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
             <div className="p-2 mt-2 flex items-center gap-2">
@@ -465,7 +466,7 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <a href="#" className="flex items-center gap-2.5 mb-4">
+            <Link to="/" className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
                 <svg className="w-4 h-4 text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -474,7 +475,7 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
                 </svg>
               </div>
               <span className="text-lg font-bold text-white">بات‌زون</span>
-            </a>
+            </Link>
             <p className="text-sm text-gray-500 leading-relaxed">
               ساخت آینده‌ ربات‌ها، روی پیام‌رسان سروش.
             </p>
@@ -706,21 +707,147 @@ function LegalModal({ page, onClose }: { page: string; onClose: () => void }) {
   );
 }
 
-export default function App() {
-  const [legalPage, setLegalPage] = useState<string | null>(null);
-
+function NotFoundPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   return (
-    <div className="antialiased">
-      <Navbar />
+    <div className="relative min-h-screen bg-white overflow-hidden flex flex-col">
+      {/* Background Effects - same as Hero */}
+      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`,
+        backgroundSize: "60px 60px",
+      }} />
+
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-32 text-center">
+        {/* 404 Pill Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-500 mb-8">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          خطای ۴۰۴ — صفحه یافت نشد
+        </div>
+
+        {/* Big 404 Circle Design - Modern Style */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200/50 to-gray-300/30 rounded-full blur-[40px] scale-110" />
+          <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] flex items-center justify-center">
+            <span className="text-5xl sm:text-6xl font-black tracking-tight bg-gradient-to-br from-gray-900 via-gray-600 to-gray-400 bg-clip-text text-transparent">
+              ۴۰۴
+            </span>
+          </div>
+          {/* Floating small circles */}
+          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-900 shadow-lg flex items-center justify-center">
+            <span className="text-[10px]">⚠️</span>
+          </div>
+          <div className="absolute -bottom-1 -left-3 w-8 h-8 rounded-full bg-white border border-black/[0.06] shadow-md flex items-center justify-center text-gray-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75L4.5 4.5m0 0l5.25 5.25m-5.25-5.25v4.5m4.5-4.5h4.5m-9 9l5.25 5.25m-5.25-5.25v-4.5m4.5 4.5h4.5" />
+            </svg>
+          </div>
+        </div>
+
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-4">
+          صفحه مورد نظر
+          <br />
+          <span className="bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 bg-clip-text text-transparent">
+            پیدا نشد
+          </span>
+        </h1>
+
+        <p className="text-base sm:text-lg text-gray-500 max-w-md mx-auto mb-3 leading-relaxed">
+          متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد یا جابه‌جا شده است.
+        </p>
+        
+        {/* Show attempted path */}
+        <div className="mb-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.06] text-xs font-mono text-gray-500 max-w-full truncate">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+          <span dir="ltr" className="truncate">{location.pathname}</span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="group inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black px-7 py-3.5 rounded-full transition-all duration-300 shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            بازگشت به خانه
+          </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.06] hover:border-black/10 px-7 py-3.5 rounded-full transition-all duration-300"
+          >
+            بازگشت به صفحه قبل
+          </button>
+        </div>
+
+        {/* Helpful Links - circular pills */}
+        <div className="mt-16 flex flex-wrap items-center justify-center gap-2 max-w-lg">
+          <span className="text-xs text-gray-400 w-full text-center mb-2">شاید به دنبال این باشید:</span>
+          {[
+            { label: "امکانات", to: "/#features" },
+            { label: "تعرفه‌ها", to: "/#pricing" },
+            { label: "مستندات", to: "/" },
+            { label: "پشتیبانی", to: "https://sapp.ir/Veltorix", external: true },
+          ].map((link) =>
+            link.external ? (
+              <a
+                key={link.label}
+                href={link.to}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-black/[0.06] hover:border-black/10 px-4 py-2 rounded-full transition-all"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.label}
+                to={link.to}
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-black/[0.06] hover:border-black/10 px-4 py-2 rounded-full transition-all"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomePage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  return (
+    <>
       <Hero />
       <Features />
       <Stats />
       <Testimonials />
       <CTA />
-      <Footer onOpenLegal={(page) => setLegalPage(page)} />
-      {legalPage && (
-        <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />
-      )}
-    </div>
+      <Footer onOpenLegal={onOpenLegal} />
+    </>
+  );
+}
+
+export default function App() {
+  const [legalPage, setLegalPage] = useState<string | null>(null);
+
+  return (
+    <BrowserRouter basename="/BotZone">
+      <div className="antialiased">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<HomePage onOpenLegal={(page) => setLegalPage(page)} />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        {legalPage && (
+          <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />
+        )}
+      </div>
+    </BrowserRouter>
   );
 }
