@@ -338,7 +338,12 @@ function Stats() {
       label: "ربات فعال",
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8.25 3v1.5M4.5 21v-1.5M19.5 21v-1.5M15.75 3v1.5M12 3v1.5m0 15V21m-4.5-1.5h9M6 10.5a.75.75 0 01.75-.75h10.5a.75.75 0 01.75.75v6a.75.75 0 01-.75.75H6.75A.75.75 0 016 16.5v-6zM9 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm9 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+          {/* Modern Bot - clean */}
+          <rect x="4" y="10" width="16" height="10" rx="3" />
+          <path d="M8 10V8.5a4 4 0 014-4h0a4 4 0 014 4V10" />
+          <path d="M12 6V4" />
+          <circle cx="9.25" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="14.75" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
         </svg>
       ),
     },
@@ -347,8 +352,11 @@ function Stats() {
       label: "میانگین تأخیر",
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 6v6h4.5m-4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          <path d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a2.25 2.25 0 00-2.25-2.25z" opacity={0.5} />
+          {/* Modern Gauge / Speedometer for latency */}
+          <path d="M3.34 19A10 10 0 1120.66 19" />
+          <path d="M12 14V10" />
+          <path d="M12 14l2.8-2.8" />
+          <circle cx="12" cy="14" r="1.2" fill="currentColor" stroke="none" />
         </svg>
       ),
     },
