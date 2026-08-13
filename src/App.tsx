@@ -1,6 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 origin-left z-[100] pointer-events-none"
+      style={{ scaleX }}
+    />
+  );
+}
 
 /* ---------- Animation helpers ---------- */
 const fadeUp = {
@@ -372,6 +387,27 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
             {["𝕏", "GH", "IN"].map((s) => <div key={s} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-xs hover:text-white hover:bg-white/10 transition-colors cursor-pointer">{s}</div>)}
           </div>
         </div>
+
+        {/* Made with love - gray text + red heart SVG */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-10 pt-6 border-t border-white/[0.03] flex items-center justify-center gap-2 text-[13px] text-gray-500"
+        >
+          <span>ساخته شده با</span>
+          <motion.span
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1 }}
+            className="inline-flex"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_2px_6px_rgba(239,68,68,0.4)]">
+              <path d="M12 21s-6.5-4.35-9.17-8.33A5.5 5.5 0 0112 6.5a5.5 5.5 0 019.17 6.17C18.5 16.65 12 21 12 21z" />
+            </svg>
+          </motion.span>
+          <span>برای شما</span>
+        </motion.div>
       </div>
     </footer>
   );
@@ -575,6 +611,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/BotZone">
       <div className="antialiased overflow-x-hidden">
+        <ScrollProgress />
         <Navbar />
         <AnimatedRoutes onOpenLegal={(p) => setLegalPage(p)} />
         <AnimatePresence>
