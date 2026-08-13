@@ -187,35 +187,6 @@ function Hero() {
           <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-medium text-gray-600 hover:text-gray-900 bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.06] px-8 py-4 rounded-full">مشاهده دمو</motion.button>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }} className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-gray-300/50 to-gray-400/30 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-          <div className="relative rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-2xl">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-black/5 bg-gray-50/80">
-              <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400" /><div className="w-3 h-3 rounded-full bg-yellow-400" /><div className="w-3 h-3 rounded-full bg-green-400" /></div>
-              <div className="flex-1" />
-            </div>
-            <div className="p-6 space-y-4 bg-gradient-to-b from-white to-gray-50">
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: "پیام‌ها", value: "۴۸,۲۰۰", change: "+۱۲.۵٪", color: "emerald" },
-                  { label: "کاربران", value: "۲,۸۴۷", change: "+۸.۱٪", color: "gray" },
-                  { label: "آپتایم", value: "۹۹.۹۸٪", change: "+۰.۰۲٪", color: "gray" },
-                ].map((stat, i) => (
-                  <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.1 }} className="rounded-xl bg-white border border-black/[0.06] p-4 shadow-sm">
-                    <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
-                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                    <span className={`text-xs font-medium ${stat.color === "emerald" ? "text-emerald-500" : "text-gray-500"}`}>{stat.change}</span>
-                  </motion.div>
-                ))}
-              </div>
-              <div className="rounded-xl bg-white border border-black/[0.06] p-4 h-40 flex items-end gap-2 shadow-sm overflow-hidden">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-                  <motion.div key={i} initial={{ height: 0 }} whileInView={{ height: `${h}%` }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.9 + i * 0.05, ease: "easeOut" }} className="flex-1 rounded-t-md bg-gradient-to-t from-gray-800 to-gray-400" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-100" />
     </section>
