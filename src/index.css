@@ -1,53 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-body {
-  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
-}
-
-@theme {
-  --animate-shimmer: shimmer 3s ease-in-out infinite;
-  --animate-fadeIn: fadeIn 0.3s ease-out;
-}
-
-@keyframes shimmer {
-  0%, 100% {
-    background-position: 0% center;
-  }
-  50% {
-    background-position: 100% center;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #07070d;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1a1a2e;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #2a2a4e;
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
+
+body {
+  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Theme animations */
+@theme {
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
+  --animate-fadeIn: fadeIn 0.3s ease-out;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #07070d; }
+::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
+
+/* ========== MOBILE OPTIMIZATIONS ========== */
+@media (max-width: 768px) {
+  /* Reduce heavy blurs on mobile for performance */
+  .blur-\[120px\] { filter: blur(60px) !important; }
+  .blur-\[100px\] { filter: blur(50px) !important; }
+  .blur-\[130px\] { filter: blur(65px) !important; }
+  .blur-\[150px\] { filter: blur(75px) !important; }
+
+  /* Smaller hero heading to prevent overflow */
+  h1 { word-break: break-word; }
+
+  /* Ensure touch targets are at least 44px */
+  button, a { min-height: 44px; touch-action: manipulation; }
+
+  /* Reduce motion for users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* iOS safe area */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Improve focus for accessibility (mobile keyboard) */
+:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+/* Prevent horizontal scroll from 100vw issues on mobile */
+img, video { max-width: 100%; height: auto; }
+
+/* Better tap for pill buttons */
+.rounded-full { -webkit-tap-highlight-color: transparent; }

@@ -189,31 +189,31 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
-      <motion.div animate={{ x: [0, 20, 0], y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
-      <motion.div animate={{ x: [0, -15, 0], y: [0, 20, 0] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
+    <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-white">
+      <motion.div animate={{ x: [0, 20, 0], y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-20%] left-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gray-200/50 rounded-full blur-[60px] sm:blur-[120px]" />
+      <motion.div animate={{ x: [0, -15, 0], y: [0, 20, 0] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-10%] right-[10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-gray-300/30 rounded-full blur-[50px] sm:blur-[100px]" />
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24">
-        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.2] mb-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-5 sm:px-6 text-center pt-28 sm:pt-24 pb-12">
+        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[2.5rem] leading-[1.1] sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
           <span className="text-gray-900">ربات‌های هوشمند</span>
           <br />
           <span className="bg-gradient-to-r from-gray-900 via-gray-500 to-gray-900 bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">برای سروش</span>
         </motion.h1>
 
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="text-base sm:text-xl text-gray-500 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
           بات‌زون، پلتفرم طراحی و توسعه ربات‌های حرفه‌ای روی پیام‌رسان سروش. ابزارهای قدرتمند، راه‌اندازی سریع، بدون پیچیدگی.
         </motion.p>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 mb-8 sm:mb-16 px-2 sm:px-0">
           <Link to="/signup" className="w-full sm:w-auto">
-            <motion.button whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }} className="group relative w-full inline-flex items-center justify-center gap-2 text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-8 py-4 rounded-full shadow-xl">
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-6 sm:px-8 py-4 rounded-full shadow-xl touch-manipulation">
               ثبت نام
               <motion.svg animate={{ x: [0, -3, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></motion.svg>
             </motion.button>
           </Link>
           <Link to="/login" className="w-full sm:w-auto">
-            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="group w-full inline-flex items-center justify-center gap-2 text-base font-medium text-gray-700 hover:text-gray-900 bg-white/80 backdrop-blur-xl hover:bg-white border border-black/[0.08] hover:border-black/[0.12] px-8 py-4 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all">
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-medium text-gray-700 hover:text-gray-900 bg-white/80 backdrop-blur-xl hover:bg-white border border-black/[0.08] hover:border-black/[0.12] px-6 sm:px-8 py-4 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all touch-manipulation">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
               ورود
             </motion.button>
@@ -221,7 +221,7 @@ function Hero() {
         </motion.div>
 
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-100" />
+      <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-32 bg-gradient-to-b from-transparent to-gray-100" />
     </section>
   );
 }
@@ -237,18 +237,18 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="relative py-32 bg-gray-100 overflow-hidden">
-      <motion.div animate={{ scale: [1, 1.15, 1], x: [0, 10, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute top-20 left-[20%] w-[600px] h-[600px] bg-gradient-to-br from-white/60 to-gray-200/40 rounded-full blur-[100px]" />
-      <motion.div animate={{ scale: [1, 1.1, 1], x: [0, -15, 0] }} transition={{ duration: 11, repeat: Infinity }} className="absolute bottom-20 right-[15%] w-[500px] h-[500px] bg-gradient-to-tl from-gray-300/30 to-white/20 rounded-full blur-[120px]" />
+    <section id="features" className="relative py-20 sm:py-32 bg-gray-100 overflow-hidden">
+      <motion.div animate={{ scale: [1, 1.15, 1], x: [0, 10, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute top-20 left-[20%] w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-white/60 to-gray-200/40 rounded-full blur-[60px] sm:blur-[100px]" />
+      <motion.div animate={{ scale: [1, 1.1, 1], x: [0, -15, 0] }} transition={{ duration: 11, repeat: Infinity }} className="absolute bottom-20 right-[15%] w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-gradient-to-tl from-gray-300/30 to-white/20 rounded-full blur-[60px] sm:blur-[120px]" />
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <motion.div {...fadeUp} className="text-center mb-20">
-          <span className="text-sm font-semibold text-gray-400 tracking-widest mb-4 block">امکانات</span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5">هر آنچه برای ساخت ربات نیاز دارید</h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">امکانات قدرتمند برای توسعه سریع‌تر ربات‌های سروش و ارائه بهترین تجربه به کاربران.</p>
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 relative z-10">
+        <motion.div {...fadeUp} className="text-center mb-12 sm:mb-20 px-2">
+          <span className="text-xs sm:text-sm font-semibold text-gray-400 tracking-widest mb-3 sm:mb-4 block">امکانات</span>
+          <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4 sm:mb-5 leading-tight">هر آنچه برای ساخت ربات نیاز دارید</h2>
+          <p className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto">امکانات قدرتمند برای توسعه سریع‌تر ربات‌های سروش.</p>
         </motion.div>
 
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true, margin: "-80px" }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true, margin: "-80px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
@@ -282,7 +282,7 @@ function Stats() {
   ];
 
   return (
-    <section className="relative py-24 bg-gray-300 overflow-hidden">
+    <section className="relative py-16 sm:py-24 bg-gray-300 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
       <div className="max-w-7xl mx-auto px-6">
         <motion.div
@@ -332,7 +332,7 @@ function Testimonials() {
   ];
 
   return (
-    <section id="about" className="relative py-32 bg-gray-500">
+    <section id="about" className="relative py-20 sm:py-32 bg-gray-500">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div {...fadeUp} className="text-center mb-16">
           <span className="text-sm font-semibold text-gray-200 tracking-widest mb-4 block">نظرات مشتریان</span>
@@ -358,9 +358,9 @@ function Testimonials() {
 
 function CTA() {
   return (
-    <section className="relative py-32 bg-gray-700 overflow-hidden">
+    <section className="relative py-20 sm:py-32 bg-gray-700 overflow-hidden">
       <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white/5 rounded-full blur-[120px]" />
-      <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+      <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 text-center">
         <motion.h2 {...fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">آماده‌اید ربات<span className="block bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">خودتون رو بسازید؟</span></motion.h2>
         <motion.p {...fadeUp} transition={{ delay: 0.1 }} className="text-lg text-gray-300 mb-10 max-w-xl mx-auto">به هزاران تیمی بپیوندید که با بات‌زون سریع‌تر ربات می‌سازند. شروع رایگان — بدون نیاز به کارت بانکی.</motion.p>
         <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -496,7 +496,7 @@ function PageHero({ title, subtitle, badge }: { title: string; subtitle: string;
     <section className="relative pt-36 pb-20 bg-white overflow-hidden">
       <motion.div animate={{ x: [0, 15, 0], y: [0, -10, 0] }} transition={{ duration: 7, repeat: Infinity }} className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/40 rounded-full blur-[120px]" />
       <motion.div animate={{ x: [0, -10, 0], y: [0, 15, 0] }} transition={{ duration: 8, repeat: Infinity }} className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] bg-gray-300/20 rounded-full blur-[100px]" />
-      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+      <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-600 mb-6"><span className="w-2 h-2 rounded-full bg-gray-900" />{badge}</motion.div>
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }} className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">{title}</motion.h1>
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }} className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">{subtitle}</motion.p>
@@ -611,9 +611,9 @@ function AuthPageLayout({ title, subtitle, children }: { title: string; subtitle
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-white overflow-hidden px-4 py-20">
       {/* Blur blobs */}
-      <motion.div animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[10%] left-[15%] w-[600px] h-[600px] bg-gradient-to-br from-gray-200/60 to-gray-300/40 rounded-full blur-[120px]" />
-      <motion.div animate={{ x: [0, -20, 0], y: [0, 25, 0] }} transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[5%] right-[10%] w-[500px] h-[500px] bg-gradient-to-tr from-gray-100/80 to-gray-200/50 rounded-full blur-[130px]" />
-      <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 8, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-violet-100/20 via-gray-100/30 to-blue-100/20 rounded-full blur-[150px]" />
+      <motion.div animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[10%] left-[15%] w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-gray-200/60 to-gray-300/40 rounded-full blur-[120px]" />
+      <motion.div animate={{ x: [0, -20, 0], y: [0, 25, 0] }} transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[5%] right-[10%] w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-gradient-to-tr from-gray-100/80 to-gray-200/50 rounded-full blur-[130px]" />
+      <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 8, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-gradient-to-r from-violet-100/20 via-gray-100/30 to-blue-100/20 rounded-full blur-[150px]" />
       
       <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
