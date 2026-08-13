@@ -315,10 +315,43 @@ function Features() {
 
 function Stats() {
   const stats = [
-    { value: "۹۹.۹۹٪", label: "آپتایم تضمینی", icon: "⚡" },
-    { value: "+۵۰ هزار", label: "کاربر فعال", icon: "👩‍💻" },
-    { value: "+۳۰۰", label: "ربات فعال", icon: "🤖" },
-    { value: "‏<۵۰ms", label: "میانگین تأخیر", icon: "🚀" },
+    {
+      value: "۹۹.۹۹٪",
+      label: "آپتایم تضمینی",
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+        </svg>
+      ),
+    },
+    {
+      value: "+۵۰ هزار",
+      label: "کاربر فعال",
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      ),
+    },
+    {
+      value: "+۳۰۰",
+      label: "ربات فعال",
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8.25 3v1.5M4.5 21v-1.5M19.5 21v-1.5M15.75 3v1.5M12 3v1.5m0 15V21m-4.5-1.5h9M6 10.5a.75.75 0 01.75-.75h10.5a.75.75 0 01.75.75v6a.75.75 0 01-.75.75H6.75A.75.75 0 016 16.5v-6zM9 13.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm9 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+        </svg>
+      ),
+    },
+    {
+      value: "‏<۵۰ms",
+      label: "میانگین تأخیر",
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 6v6h4.5m-4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a2.25 2.25 0 00-2.25-2.25z" opacity={0.5} />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -329,7 +362,9 @@ function Stats() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center group">
-              <div className="text-3xl mb-3">{stat.icon}</div>
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:scale-110 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] transition-all duration-300">
+                {stat.icon}
+              </div>
               <div className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 tracking-tight">
                 {stat.value}
               </div>
