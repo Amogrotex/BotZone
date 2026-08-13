@@ -192,7 +192,7 @@ function Hero() {
           <div className="relative rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-2xl">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-black/5 bg-gray-50/80">
               <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400" /><div className="w-3 h-3 rounded-full bg-yellow-400" /><div className="w-3 h-3 rounded-full bg-green-400" /></div>
-              <div className="flex-1 mx-12"><div className="bg-black/[0.04] rounded-md px-3 py-1 text-xs text-gray-400 text-center max-w-xs mx-auto" dir="ltr">botzone.ir/dashboard</div></div>
+              <div className="flex-1" />
             </div>
             <div className="p-6 space-y-4 bg-gradient-to-b from-white to-gray-50">
               <div className="grid grid-cols-3 gap-4">
