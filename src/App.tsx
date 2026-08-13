@@ -11,91 +11,106 @@ function Navbar() {
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/80 backdrop-blur-xl border-b border-black/5 shadow-sm"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <a href="#" className="flex items-center gap-2.5 group">
-          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10 group-hover:shadow-black/20 transition-shadow">
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold text-gray-900">بات‌زون</span>
-        </a>
-
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
-          {[
-            { label: "امکانات", href: "#features" },
-            { label: "تعرفه‌ها", href: "#pricing" },
-            { label: "درباره ما", href: "#about" },
-            { label: "وبلاگ", href: "#blog" },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-200 relative after:absolute after:bottom-[-4px] after:right-0 after:w-0 after:h-[2px] after:bg-gray-900 hover:after:w-full after:transition-all after:duration-300"
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
-
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          <button className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
-            ورود
-          </button>
-          <button className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 px-5 py-2.5 rounded-full transition-all duration-300 shadow-lg shadow-black/10 hover:shadow-black/20 hover:scale-105">
-            شروع کنید
-          </button>
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden text-gray-500 hover:text-gray-900 transition-colors"
+    <div className="fixed top-4 sm:top-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="w-full max-w-5xl pointer-events-auto">
+        {/* Pill Navbar - modern floating island */}
+        <nav
+          className={`relative flex items-center justify-between gap-4 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full border transition-all duration-500 ${
+            scrolled
+              ? "bg-white/85 backdrop-blur-2xl border-black/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)]"
+              : "bg-white/70 backdrop-blur-xl border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03)]"
+          }`}
         >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            {menuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </div>
+          {/* Logo - circular accent */}
+          <a href="#" className="flex items-center gap-2.5 group shrink-0 pl-1">
+            <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10 group-hover:shadow-black/20 group-hover:scale-105 transition-all duration-300">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+            </div>
+            <span className="text-[17px] font-bold tracking-tight text-gray-900">بات‌زون</span>
+          </a>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-black/5 px-6 py-6 space-y-4 animate-fadeIn">
-          {[
-            { label: "امکانات", href: "#features" },
-            { label: "تعرفه‌ها", href: "#pricing" },
-            { label: "درباره ما", href: "#about" },
-            { label: "وبلاگ", href: "#blog" },
-          ].map((item) => (
-            <a key={item.label} href={item.href} className="block text-gray-600 hover:text-gray-900 transition-colors">
-              {item.label}
-            </a>
-          ))}
-          <div className="pt-4 border-t border-black/5 flex flex-col gap-3">
-            <button className="text-sm text-gray-600 hover:text-gray-900 py-2 transition-colors text-right">ورود</button>
-            <button className="text-sm font-medium text-white bg-gray-900 px-5 py-2.5 rounded-full w-fit">
+          {/* Desktop Nav - pill inside pill */}
+          <div className="hidden lg:flex items-center gap-1 bg-black/[0.03] rounded-full p-1">
+            {[
+              { label: "امکانات", href: "#features" },
+              { label: "تعرفه‌ها", href: "#pricing" },
+              { label: "درباره ما", href: "#about" },
+              { label: "وبلاگ", href: "#blog" },
+            ].map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-white px-4 py-2 rounded-full transition-all duration-200"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+
+          {/* Desktop CTA - circular buttons */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <button className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-black/[0.04] transition-all">
+              ورود
+            </button>
+            <button className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]">
               شروع کنید
             </button>
           </div>
-        </div>
-      )}
-    </nav>
+
+          {/* Mobile Menu Button - circular */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden w-9 h-9 rounded-full bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </nav>
+
+        {/* Mobile Menu - floating circle card */}
+        {menuOpen && (
+          <div className="md:hidden mt-3 p-2 rounded-[24px] bg-white/90 backdrop-blur-2xl border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] animate-[fadeIn_0.2s_ease]">
+            <div className="rounded-[18px] bg-gray-50/80 border border-black/[0.03] p-2 space-y-1">
+              {[
+                { label: "امکانات", href: "#features", icon: "✨" },
+                { label: "تعرفه‌ها", href: "#pricing", icon: "💳" },
+                { label: "درباره ما", href: "#about", icon: "👥" },
+                { label: "وبلاگ", href: "#blog", icon: "📝" },
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-sm transition-all"
+                >
+                  <span className="w-8 h-8 rounded-full bg-white border border-black/[0.06] flex items-center justify-center text-sm">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </a>
+              ))}
+            </div>
+            <div className="p-2 mt-2 flex items-center gap-2">
+              <button className="flex-1 text-sm font-medium text-gray-600 hover:text-gray-900 bg-black/[0.04] hover:bg-black/[0.06] border border-black/[0.06] rounded-full py-3 transition-colors">
+                ورود
+              </button>
+              <button className="flex-1 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-full py-3 shadow-lg shadow-black/10 transition-all">
+                شروع کنید
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
