@@ -266,24 +266,49 @@ function Features() {
 
 function Stats() {
   const stats = [
-    { value: "۹۹.۹۹٪", label: "آپتایم تضمینی", icon: <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /> },
-    { value: "+۵۰ هزار", label: "کاربر فعال", icon: <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /> },
-    { value: "+۳۰۰", label: "ربات فعال", icon: (<><rect x="4" y="10" width="16" height="10" rx="3" /><path d="M8 10V8.5a4 4 0 014-4h0a4 4 0 014 4V10" /><path d="M12 6V4" /><circle cx="9.25" cy="15.5" r="1.1" fill="currentColor" /><circle cx="14.75" cy="15.5" r="1.1" fill="currentColor" /></>) },
-    { value: "‏<۵۰ms", label: "میانگین تأخیر", icon: (<><path d="M3.34 19A10 10 0 1120.66 19" /><path d="M12 14V10" /><path d="M12 14l2.8-2.8" /><circle cx="12" cy="14" r="1.2" fill="currentColor" /></>) },
+    {
+      value: "+۱ هزار",
+      label: "کاربر فعال",
+      icon: (
+        <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      ),
+    },
   ];
 
   return (
     <section className="relative py-24 bg-gray-300 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
       <div className="max-w-7xl mx-auto px-6">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true }}
+          className="flex justify-center"
+        >
           {stats.map((stat, i) => (
-            <motion.div key={stat.label} variants={staggerItem} custom={i} whileHover={{ scale: 1.05 }} className="text-center group">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">{stat.icon}</svg>
+            <motion.div
+              key={stat.label}
+              variants={staggerItem}
+              custom={i}
+              whileHover={{ scale: 1.05 }}
+              className="text-center group"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  {stat.icon}
+                </svg>
               </div>
-              <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring", stiffness: 120 }} className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 tracking-tight">{stat.value}</motion.div>
-              <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">{stat.label}</div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, type: "spring", stiffness: 120 }}
+                className="text-5xl sm:text-6xl font-bold text-gray-900 mb-3 tracking-tight"
+              >
+                {stat.value}
+              </motion.div>
+              <div className="text-base text-gray-600 font-medium tracking-wide">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
