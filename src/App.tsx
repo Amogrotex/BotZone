@@ -514,17 +514,82 @@ function PageHero({ title, subtitle, badge }: { title: string; subtitle: string;
 }
 
 function AboutPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
+  const values = [
+    { number: "۰۱", title: "سادگی در طراحی", text: "فناوری پیچیده باید تجربه‌ای ساده داشته باشد. ابزارهای ما طوری طراحی شده‌اند که ایده شما بدون مانع به یک ربات واقعی تبدیل شود." },
+    { number: "۰۲", title: "امنیت از ابتدا", text: "امنیت یک قابلیت جانبی نیست؛ بخشی از معماری بات‌زون است. از رمزنگاری داده‌ها تا کنترل دسترسی، همه‌چیز با دقت ساخته شده است." },
+    { number: "۰۳", title: "رشد در کنار شما", text: "از اولین کاربر تا میلیون‌ها پیام، زیرساخت ما همراه کسب‌وکار شما رشد می‌کند و تیم پشتیبانی در تمام مسیر کنار شماست." },
+  ];
+
   return (
     <PageTransition>
-      <PageHero badge="شرکت" title="درباره بات‌زون" subtitle="ما آینده‌ ربات‌های سروش را می‌سازیم — ساده، سریع و امن" />
-      <section className="py-20 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-          <motion.div {...fadeUp}><h2 className="text-3xl font-bold mb-4">ماموریت ما</h2><p className="text-gray-500 leading-7">بات‌زون در ۱۴۰۳ با هدف ساده‌سازی توسعه ربات روی سروش آغاز شد. امروز بیش از ۳۰۰ ربات فعال داریم.</p></motion.div>
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="rounded-2xl bg-white border p-8 shadow-xl grid grid-cols-2 gap-6 text-center">
-            <div><div className="text-3xl font-bold">۱۴۰۳</div><div className="text-xs text-gray-500">سال تأسیس</div></div>
-            <div><div className="text-3xl font-bold">۱۲ نفر</div><div className="text-xs text-gray-500">اعضای تیم</div></div>
-            <div><div className="text-3xl font-bold">+۳۰۰</div><div className="text-xs text-gray-500">ربات فعال</div></div>
-            <div><div className="text-3xl font-bold">۹۹.۹۹٪</div><div className="text-xs text-gray-500">آپتایم</div></div>
+      <PageHero badge="درباره ما" title="فناوری ساده برای ایده‌های بزرگ" subtitle="ما در بات‌زون ابزارهایی می‌سازیم که توسعه ربات‌های سروش را برای هر تیمی سریع، امن و لذت‌بخش می‌کند." />
+
+      <section className="py-20 sm:py-28 bg-gray-50 border-t border-black/[0.06] overflow-hidden">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
+            <motion.div {...fadeUp}>
+              <span className="text-xs font-semibold text-gray-400 tracking-widest">داستان بات‌زون</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-4 mb-6 leading-tight">ساخت ربات نباید پیچیده باشد</h2>
+              <div className="space-y-4 text-gray-500 leading-8 text-sm sm:text-base">
+                <p>بات‌زون با یک پرسش ساده شکل گرفت: چرا راه‌اندازی یک ربات حرفه‌ای باید زمان‌بر و دشوار باشد؟ ما تصمیم گرفتیم زیرساخت، امنیت و ابزارهای توسعه را در یک فضای یکپارچه کنار هم قرار دهیم.</p>
+                <p>امروز تمرکز ما بر ساخت تجربه‌ای است که توسعه‌دهندگان و کسب‌وکارها بتوانند به‌جای درگیر شدن با زیرساخت، روی محصول و ارتباط بهتر با کاربران خود تمرکز کنند.</p>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 24, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7 }} className="relative rounded-[32px] bg-gray-900 text-white p-7 sm:p-9 shadow-[0_24px_60px_rgba(0,0,0,0.18)] overflow-hidden">
+              <div className="absolute -top-20 -left-20 w-52 h-52 rounded-full bg-white/10 blur-3xl" />
+              <div className="relative grid grid-cols-2 gap-4">
+                {[
+                  ["۱۴۰۳", "شروع مسیر"],
+                  ["+۳۰۰", "ربات فعال"],
+                  ["۱۲ نفر", "اعضای تیم"],
+                  ["۹۹.۹۹٪", "پایداری سرویس"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-2xl bg-white/[0.07] border border-white/10 p-5 text-center">
+                    <div className="text-2xl sm:text-3xl font-bold mb-2">{value}</div>
+                    <div className="text-xs text-white/55">{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="relative mt-5 flex items-center gap-3 rounded-2xl bg-white/[0.07] border border-white/10 p-4">
+                <span className="flex w-10 h-10 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m5 12 4 4L19 6" /></svg>
+                </span>
+                <div><p className="text-sm font-medium">ساخته‌شده برای اعتماد</p><p className="text-xs text-white/50 mt-1">زیرساخت پایدار، داده‌های رمزنگاری‌شده</p></div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 sm:py-28 bg-white">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <motion.div {...fadeUp} className="max-w-2xl mb-12">
+            <span className="text-xs font-semibold text-gray-400 tracking-widest">ارزش‌های ما</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-4">اصولی که با آن‌ها می‌سازیم</h2>
+          </motion.div>
+          <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true, margin: "-60px" }} className="grid md:grid-cols-3 gap-5">
+            {values.map((value) => (
+              <motion.article key={value.number} variants={staggerItem} whileHover={{ y: -5 }} className="group rounded-[28px] bg-gray-50 border border-black/[0.06] p-7 sm:p-8 hover:bg-white hover:shadow-[0_18px_45px_rgba(0,0,0,0.08)] transition-all">
+                <span className="inline-flex w-11 h-11 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-bold mb-7">{value.number}</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{value.title}</h3>
+                <p className="text-sm text-gray-500 leading-7">{value.text}</p>
+              </motion.article>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="py-20 sm:py-24 bg-gray-900 text-white overflow-hidden">
+        <div className="relative max-w-5xl mx-auto px-5 sm:px-6 text-center">
+          <motion.div {...fadeUp}>
+            <span className="text-xs font-semibold text-white/45 tracking-widest">ماموریت ما</span>
+            <blockquote className="text-2xl sm:text-4xl font-bold leading-relaxed max-w-4xl mx-auto mt-5">«کمک به تیم‌ها برای ساخت ارتباطات هوشمندتر؛ بدون نگرانی درباره پیچیدگی‌های فنی.»</blockquote>
+            <p className="text-sm sm:text-base text-white/55 max-w-2xl mx-auto mt-6 leading-7">ما هر روز تلاش می‌کنیم فاصله میان یک ایده و اجرای آن را کوتاه‌تر کنیم و بستری قابل اعتماد برای نسل بعدی خدمات هوشمند فارسی بسازیم.</p>
+            <div className="mt-9 flex flex-col sm:flex-row justify-center gap-3">
+              <Link to="/signup" className="inline-flex items-center justify-center rounded-full bg-white text-gray-900 hover:bg-gray-100 px-7 py-3.5 text-sm font-semibold transition-colors">همراه ما شروع کنید</Link>
+              <Link to="/careers" className="inline-flex items-center justify-center rounded-full bg-white/10 border border-white/15 hover:bg-white/15 px-7 py-3.5 text-sm font-medium transition-colors">فرصت‌های همکاری</Link>
+            </div>
           </motion.div>
         </div>
       </section>
