@@ -402,14 +402,12 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const companyLinks = [
     { label: "درباره ما", to: "/about" },
     { label: "وبلاگ", to: "/blog" },
-    { label: "فرصت‌های شغلی", to: "/careers" },
     { label: "اخبار", to: "/news" },
-    { label: "همکاران", to: "/partners" },
   ];
   const footerLinks = {
     "محصول": ["امکانات", "تعرفه‌ها", "یکپارچه‌سازی", "تغییرات", "مستندات"],
     "شرکت": companyLinks.map(c => c.label),
-    "منابع": ["انجمن", "تماس با ما", "پشتیبانی", "وضعیت سرور", "API"],
+    "منابع": ["انجمن", "تماس با ما", "پشتیبانی"],
     "قوانین": legalPages,
   };
   return (
@@ -436,11 +434,8 @@ function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
             </motion.div>
           ))}
         </motion.div>
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
+        <div className="flex items-center justify-center pt-8 border-t border-white/5">
           <p className="text-xs text-gray-600">© ۱۴۰۵ بات‌زون. تمامی حقوق محفوظ است.</p>
-          <div className="flex items-center gap-4">
-            {["𝕏", "GH", "IN"].map((s) => <div key={s} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-xs hover:text-white hover:bg-white/10 transition-colors cursor-pointer">{s}</div>)}
-          </div>
         </div>
 
         {/* Made with love - gray text + red heart SVG */}
@@ -641,31 +636,6 @@ function BlogPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   );
 }
 
-function CareersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const jobs = [
-    { role: "مهندس بک‌اند (Node.js)", type: "تمام‌وقت • ریموت", loc: "تهران / ریموت" },
-    { role: "طراح محصول UI/UX", type: "تمام‌وقت • حضوری", loc: "تهران" },
-    { role: "متخصص DevOps", type: "پاره‌وقت • ریموت", loc: "ریموت" },
-    { role: "پشتیبان فنی", type: "تمام‌وقت • ریموت", loc: "ریموت" },
-  ];
-  return (
-    <PageTransition>
-      <PageHero badge="فرصت‌های شغلی" title="به تیم ما بپیوندید" subtitle="افراد باانگیزه برای ساخت آینده‌ ربات‌ها" />
-      <section className="py-16 bg-gray-50 border-t">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-4xl mx-auto px-6 space-y-4">
-          {jobs.map((job) => (
-            <motion.div key={job.role} variants={staggerItem} whileHover={{ scale: 1.01 }} className="flex flex-col sm:flex-row justify-between gap-4 rounded-2xl bg-white border p-6">
-              <div><h3 className="font-semibold">{job.role}</h3><div className="flex gap-2 mt-2"><span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{job.type}</span><span className="text-xs px-3 py-1 rounded-full bg-white border">{job.loc}</span></div></div>
-              <button className="text-sm bg-gray-900 text-white px-5 py-2.5 rounded-full">ارسال رزومه</button>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
 function NewsPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   const news = [
     { date: "۲۲ مرداد ۱۴۰۴", title: "بات‌زون به ۳۰۰ ربات فعال رسید", desc: "رشد ۱۲۰٪ در ۶ ماه." },
@@ -676,21 +646,6 @@ function NewsPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
     <PageTransition>
       <PageHero badge="اخبار" title="آخرین اخبار" subtitle="به‌روزرسانی‌ها و دستاوردها" />
       <section className="py-16 bg-gray-50 border-t"><div className="max-w-3xl mx-auto px-6 border-r border-black/10 pr-8 space-y-12">{news.map((n, i) => <motion.div key={n.title} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="relative"><div className="absolute -right-[37px] w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white" /><div className="text-xs text-gray-400">{n.date}</div><h3 className="font-semibold text-lg">{n.title}</h3><p className="text-sm text-gray-500 mt-2">{n.desc}</p></motion.div>)}</div></section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function PartnersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const partners = ["سروش", "تک‌نوآوران", "دیجی‌سرویس", "آسان‌تک", "ابرآروان", "پارس‌پک"];
-  return (
-    <PageTransition>
-      <PageHero badge="همکاران" title="همکاران ما" subtitle="سازمان‌هایی که به بات‌زون اعتماد کرده‌اند" />
-      <section className="py-16 bg-gray-50 border-t">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-6">
-          {partners.map((name) => <motion.div key={name} variants={staggerItem} whileHover={{ y: -4, scale: 1.02 }} className="rounded-2xl bg-white/70 backdrop-blur-xl border border-black/[0.06] p-8 h-32 flex items-center justify-center hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:bg-white/90 transition-all"><span className="font-bold text-gray-400">{name}</span></motion.div>)}
-        </motion.div>
-      </section>
       <Footer onOpenLegal={onOpenLegal} />
     </PageTransition>
   );
@@ -1012,9 +967,7 @@ function AnimatedRoutes({ onOpenLegal }: { onOpenLegal: (p: string) => void }) {
         <Route path="/" element={<PageTransition><HomePage onOpenLegal={onOpenLegal} /></PageTransition>} />
         <Route path="/about" element={<AboutPage onOpenLegal={onOpenLegal} />} />
         <Route path="/blog" element={<BlogPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/careers" element={<CareersPage onOpenLegal={onOpenLegal} />} />
         <Route path="/news" element={<NewsPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/partners" element={<PartnersPage onOpenLegal={onOpenLegal} />} />
         <Route path="/login" element={<AuthGate guestOnly><LoginPage /></AuthGate>} />
         <Route path="/signup" element={<AuthGate guestOnly><SignupPage /></AuthGate>} />
         <Route path="/settings" element={<AuthGate><SettingsPage /></AuthGate>} />
