@@ -48,11 +48,27 @@ body {
 
 /* ========== MOBILE OPTIMIZATIONS ========== */
 @media (max-width: 768px) {
-  /* Reduce heavy blurs on mobile for performance */
-  .blur-\[120px\] { filter: blur(60px) !important; }
-  .blur-\[100px\] { filter: blur(50px) !important; }
-  .blur-\[130px\] { filter: blur(65px) !important; }
-  .blur-\[150px\] { filter: blur(75px) !important; }
+  /* Large animated blur layers and backdrop filters are expensive on mobile GPUs. */
+  .mobile-performance [class*="blur-["] {
+    display: none !important;
+  }
+
+  .mobile-performance [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .mobile-performance .animate-shimmer,
+  .mobile-performance .animate-float {
+    animation: none !important;
+  }
+
+  /* Avoid expensive hover transitions on touch-only devices. */
+  @media (hover: none) {
+    .mobile-performance * {
+      transition-duration: 0.12s !important;
+    }
+  }
 
   /* Smaller hero heading to prevent overflow */
   h1 { word-break: break-word; }
