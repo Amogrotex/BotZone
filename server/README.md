@@ -59,6 +59,8 @@ But even if public, secrets are safe because `.env` is gitignored.
 - `POST /api/auth/login` - login, returns JWT
 - `POST /api/auth/google` - Google OAuth (verify on backend)
 - `GET /api/auth/me` - current user (needs Bearer token)
+- `PATCH /api/auth/me` - update profile name/avatar (needs Bearer token)
+- `PATCH /api/auth/password` - change or set password (needs Bearer token)
 - `GET /api/bots` - list own bots
 - `POST /api/bots` - create bot (token encrypted)
 - `POST /api/bots/:id/files` - upload private file (encrypted, stored in gitignored folder)

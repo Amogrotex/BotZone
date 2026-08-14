@@ -2,18 +2,26 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { User } from "../models/User.js";
+import { protect, AuthRequest } from "../middleware/auth.js";
 
 const router = Router();
 
 const signupSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  name: z.string().trim().min(2).max(80),
+  email: z.string().email().transform(value => value.toLowerCase()),
+  password: z.string().min(8).max(128),
 });
-
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email().transform(value => value.toLowerCase()),
+  password: z.string().min(1).max(128),
+});
+const profileSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  avatar: z.union([z.string().url().max(2000), z.literal("")]).optional(),
+});
+const passwordSchema = z.object({
+  currentPassword: z.string().max(128).optional(),
+  newPassword: z.string().min(8).max(128),
 });
 
 function signToken(id: string) {
@@ -22,60 +30,112 @@ function signToken(id: string) {
   } as any);
 }
 
-// POST /api/auth/signup
+function publicUser(user: any) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    role: user.role,
+    isVerified: user.isVerified,
+  };
+}
+
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = signupSchema.parse(req.body);
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ error: "Email already exists" });
-
+    if (await User.exists({ email })) return res.status(409).json({ error: "این ایمیل قبلاً ثبت شده است" });
     const user = await User.create({ name, email, password });
-    const token = signToken(user._id.toString());
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
-  } catch (e: any) {
-    res.status(400).json({ error: e.message });
+    res.status(201).json({ token: signToken(user._id.toString()), user: publicUser(user) });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.issues?.[0]?.message || "اطلاعات ثبت‌نام معتبر نیست" });
   }
 });
 
-// POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
     const user = await User.findOne({ email }).select("+password");
-    if (!user || !user.password) return res.status(401).json({ error: "Invalid credentials" });
-
-    const ok = await (user as any).comparePassword(password);
-    if (!ok) return res.status(401).json({ error: "Invalid credentials" });
-
-    const token = signToken(user._id.toString());
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
-  } catch (e: any) {
-    res.status(400).json({ error: e.message });
+    if (!user?.password || !(await (user as any).comparePassword(password))) {
+      return res.status(401).json({ error: "ایمیل یا رمز عبور نادرست است" });
+    }
+    res.json({ token: signToken(user._id.toString()), user: publicUser(user) });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.issues?.[0]?.message || "اطلاعات ورود معتبر نیست" });
   }
 });
 
-// POST /api/auth/google - verify Google ID token from frontend
+// The backend fetches the Google profile itself, so client-provided profile data is never trusted.
 router.post("/google", async (req, res) => {
-  const { name, email, picture, googleId } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
+  try {
+    const accessToken = z.string().min(20).parse(req.body.accessToken);
+    const googleResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!googleResponse.ok) return res.status(401).json({ error: "ورود گوگل معتبر نیست" });
 
-  let user = await User.findOne({ email });
-  if (!user) {
-    user = await User.create({ name, email, avatar: picture, googleId, isVerified: true });
-  } else if (!user.googleId && googleId) {
-    user.googleId = googleId;
-    user.avatar = picture || user.avatar;
-    await user.save();
+    const profile: any = await googleResponse.json();
+    if (!profile.email || profile.email_verified === false) {
+      return res.status(400).json({ error: "ایمیل تأییدشده گوگل لازم است" });
+    }
+
+    const email = String(profile.email).toLowerCase();
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name: profile.name || email.split("@")[0],
+        email,
+        avatar: profile.picture,
+        googleId: profile.sub,
+        isVerified: true,
+      });
+    } else {
+      user.googleId ||= profile.sub;
+      user.avatar ||= profile.picture;
+      user.isVerified = true;
+      await user.save();
+    }
+
+    res.json({ token: signToken(user._id.toString()), user: publicUser(user) });
+  } catch {
+    res.status(400).json({ error: "ورود با گوگل انجام نشد" });
   }
-
-  const token = signToken(user._id.toString());
-  res.json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
 });
 
-// GET /api/auth/me (protected)
-import { protect, AuthRequest } from "../middleware/auth.js";
 router.get("/me", protect, async (req: AuthRequest, res) => {
-  res.json({ user: req.user });
+  res.json({ user: publicUser(req.user) });
+});
+
+router.patch("/me", protect, async (req: AuthRequest, res) => {
+  try {
+    const updates = profileSchema.parse(req.body);
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      updates.avatar
+        ? { $set: { name: updates.name, avatar: updates.avatar } }
+        : { $set: { name: updates.name }, $unset: { avatar: 1 } },
+      { new: true, runValidators: true },
+    );
+    res.json({ user: publicUser(user) });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.issues?.[0]?.message || "ذخیره پروفایل انجام نشد" });
+  }
+});
+
+router.patch("/password", protect, async (req: AuthRequest, res) => {
+  try {
+    const { currentPassword, newPassword } = passwordSchema.parse(req.body);
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) return res.status(404).json({ error: "کاربر پیدا نشد" });
+    if (user.password && (!currentPassword || !(await (user as any).comparePassword(currentPassword)))) {
+      return res.status(400).json({ error: "رمز عبور فعلی نادرست است" });
+    }
+    user.password = newPassword;
+    await user.save();
+    res.json({ message: "رمز عبور با موفقیت تغییر کرد" });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.issues?.[0]?.message || "تغییر رمز عبور انجام نشد" });
+  }
 });
 
 export default router;

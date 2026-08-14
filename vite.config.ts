@@ -11,6 +11,13 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   base: "/BotZone/",
   plugins: [react(), tailwindcss()],
+  server: {
+    host: "0.0.0.0",
+    allowedHosts: true,
+    proxy: {
+      "/api": "http://127.0.0.1:3001",
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

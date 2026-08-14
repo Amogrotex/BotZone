@@ -11,8 +11,12 @@ const app = express();
 
 // Security
 app.use(helmet());
+const configuredOrigins = (process.env.FRONTEND_URL || "").split(",").map(s => s.trim()).filter(Boolean);
+const allowedOrigins = configuredOrigins.length
+  ? configuredOrigins
+  : ["http://localhost:5173", "https://amogrotex.github.io"];
 app.use(cors({
-  origin: (process.env.FRONTEND_URL || "").split(",").map(s => s.trim()).filter(Boolean) || ["http://localhost:5173", "https://amogrotex.github.io"],
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
@@ -38,10 +42,10 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 BotZone backend running on http://localhost:${PORT}`);
     console.log(`📦 Protected files are in ${process.env.ENCRYPTED_DIR || "./storage/encrypted"} (gitignored - repo cloners CANNOT access)`);
     console.log(`🔐 Encryption key from .env (not in repo) - without it files are unreadable`);

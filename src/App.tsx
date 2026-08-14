@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuth } from "./context/AuthContext";
+import { authApi } from "./lib/api";
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -56,7 +57,7 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -113,12 +114,15 @@ function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-2 shrink-0">
-            {user ? (
+            {isAuthLoading ? (
+              <div className="h-10 w-32 rounded-full bg-black/[0.05] animate-pulse" aria-label="در حال بررسی ورود" />
+            ) : user ? (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white border border-black/[0.06] shadow-sm">
-                  <img src={user.picture || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="w-7 h-7 rounded-full" />
+                <Link to="/settings" title="تنظیمات پروفایل" className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full bg-white border border-black/[0.06] shadow-sm hover:border-black/15 hover:shadow-md transition-all">
+                  <img src={user.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=111827&color=fff`} alt={user.name} className="w-7 h-7 rounded-full object-cover" referrerPolicy="no-referrer" />
                   <span className="text-xs font-medium text-gray-700 max-w-[100px] truncate">{user.name}</span>
-                </div>
+                  <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.09A1.7 1.7 0 0 0 8.94 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.57 15 1.7 1.7 0 0 0 3 14H3v-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57 1.7 1.7 0 0 0 10 3h4v.09a1.7 1.7 0 0 0 1.03 1.54 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.8 7l-.06.06A1.7 1.7 0 0 0 19.4 9c.12.45.5.84 1 1H21v4h-.09c-.7 0-1.3.42-1.51 1Z"/></svg>
+                </Link>
                 <button onClick={logout} className="text-[12px] text-gray-500 hover:text-red-600 px-3 py-2 rounded-full hover:bg-red-50 transition-colors">خروج</button>
               </div>
             ) : (
@@ -168,8 +172,11 @@ function Navbar() {
                   </Link>
                 ))}
                 {user ? (
-                  <div className="px-2 py-2 border-t border-black/[0.06] mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2"><img src={user.picture} className="w-8 h-8 rounded-full" /><span className="text-sm">{user.name}</span></div>
+                  <div className="px-2 py-2 border-t border-black/[0.06] mt-2 flex items-center justify-between gap-2">
+                    <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 flex-1 rounded-full hover:bg-white px-2">
+                      <img src={user.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=111827&color=fff`} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      <span className="text-sm truncate">{user.name}</span><span className="text-xs text-gray-400">تنظیمات</span>
+                    </Link>
                     <button onClick={() => { logout(); setMenuOpen(false); }} className="text-xs text-red-500">خروج</button>
                   </div>
                 ) : (
@@ -188,6 +195,7 @@ function Navbar() {
 }
 
 function Hero() {
+  const { isAuthenticated } = useAuth();
   return (
     <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-white">
       <motion.div animate={{ x: [0, 20, 0], y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-20%] left-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gray-200/50 rounded-full blur-[60px] sm:blur-[120px]" />
@@ -206,18 +214,18 @@ function Hero() {
         </motion.p>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 mb-8 sm:mb-16 px-2 sm:px-0">
-          <Link to="/signup" className="w-full sm:w-auto">
+          <Link to={isAuthenticated ? "/settings" : "/signup"} className="w-full sm:w-auto">
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-6 sm:px-8 py-4 rounded-full shadow-xl touch-manipulation">
-              ثبت نام
+              {isAuthenticated ? "تنظیمات پروفایل" : "ثبت نام"}
               <motion.svg animate={{ x: [0, -3, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></motion.svg>
             </motion.button>
           </Link>
-          <Link to="/login" className="w-full sm:w-auto">
+          {!isAuthenticated && <Link to="/login" className="w-full sm:w-auto">
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-medium text-gray-700 hover:text-gray-900 bg-white/80 backdrop-blur-xl hover:bg-white border border-black/[0.08] hover:border-black/[0.12] px-6 sm:px-8 py-4 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all touch-manipulation">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
               ورود
             </motion.button>
-          </Link>
+          </Link>}
         </motion.div>
 
       </div>
@@ -644,39 +652,40 @@ function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { setUser } = useAuth();
+  const [error, setError] = useState("");
+  const { setSession } = useAuth();
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setGoogleLoading(true);
+      setError("");
       try {
-        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        });
-        const data = await res.json();
-        setUser({ name: data.name, email: data.email, picture: data.picture });
-        navigate("/");
-      } catch (e) {
-        alert("خطا در ورود با گوگل");
+        setSession(await authApi.google(tokenResponse.access_token));
+        navigate("/settings", { replace: true });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "خطا در ورود با گوگل");
       } finally {
         setGoogleLoading(false);
       }
     },
     onError: () => {
-      alert("ورود با گوگل لغو شد یا خطایی رخ داد");
+      setError("ورود با گوگل لغو شد یا خطایی رخ داد");
       setGoogleLoading(false);
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      setSession(await authApi.login(email, password));
+      navigate("/settings", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ورود انجام نشد");
+    } finally {
       setLoading(false);
-      // Mock login - you can replace with real API
-      setUser({ name: "کاربر تست", email: email });
-      navigate("/");
-    }, 1200);
+    }
   };
 
   const clientIdExists = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) && (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) !== "YOUR_GOOGLE_CLIENT_ID_HERE";
@@ -688,6 +697,7 @@ function LoginPage() {
           ⚠️ برای فعال‌سازی ورود با گوگل، باید <code className="bg-amber-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> را در فایل <code>.env</code> تنظیم کنید. آموزش پایین را ببینید.
         </div>
       )}
+      {error && <div role="alert" className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-xs font-medium text-gray-600 mb-2 block">ایمیل</label>
@@ -719,38 +729,46 @@ function LoginPage() {
 function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { setSession } = useAuth();
 
   const googleSignup = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setGoogleLoading(true);
+      setError("");
       try {
-        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        });
-        const data = await res.json();
-        setUser({ name: data.name, email: data.email, picture: data.picture });
-        navigate("/");
-      } catch {
-        alert("خطا در ثبت نام با گوگل");
+        setSession(await authApi.google(tokenResponse.access_token));
+        navigate("/settings", { replace: true });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "خطا در ثبت نام با گوگل");
       } finally {
         setGoogleLoading(false);
       }
     },
-    onError: () => setGoogleLoading(false),
+    onError: () => {
+      setError("ثبت نام با گوگل لغو شد یا خطایی رخ داد");
+      setGoogleLoading(false);
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    const form = new FormData(e.currentTarget);
+    try {
+      setSession(await authApi.signup({
+        name: `${form.get("firstName")} ${form.get("lastName")}`.trim(),
+        email: String(form.get("email")),
+        password: String(form.get("password")),
+      }));
+      navigate("/settings", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ثبت نام انجام نشد");
+    } finally {
       setLoading(false);
-      const form = e.target as HTMLFormElement;
-      const email = (form.elements.namedItem("email") as HTMLInputElement)?.value || "user@example.com";
-      setUser({ name: "کاربر جدید", email });
-      navigate("/");
-    }, 1300);
+    }
   };
 
   const clientIdExists = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) && (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) !== "YOUR_GOOGLE_CLIENT_ID_HERE";
@@ -762,13 +780,14 @@ function SignupPage() {
           ⚠️ برای فعال‌سازی ثبت نام با گوگل، <code className="bg-amber-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> را تنظیم کنید.
         </div>
       )}
+      {error && <div role="alert" className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام</label><input type="text" placeholder="مهدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام خانوادگی</label><input type="text" placeholder="احمدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
+          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام</label><input name="firstName" type="text" placeholder="مهدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
+          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام خانوادگی</label><input name="lastName" type="text" placeholder="احمدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
         </div>
         <div><label className="text-xs font-medium text-gray-600 mb-2 block">ایمیل</label><input name="email" dir="ltr" type="email" placeholder="you@example.com" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-        <div><label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور</label><input dir="ltr" type="password" placeholder="حداقل ۸ کاراکتر" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
+        <div><label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور</label><input name="password" dir="ltr" type="password" minLength={8} placeholder="حداقل ۸ کاراکتر" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
         <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit" disabled={loading} className="w-full py-3.5 rounded-full bg-gray-900 hover:bg-black text-white text-sm font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center gap-2">
           {loading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : null}
           {loading ? "در حال ساخت..." : "ثبت نام"}
@@ -781,6 +800,113 @@ function SignupPage() {
         <p className="text-center text-xs text-gray-500 mt-6">قبلاً حساب دارید؟ <Link to="/login" className="font-semibold text-gray-900 hover:text-black underline">وارد شوید</Link></p>
       </form>
     </AuthPageLayout>
+  );
+}
+
+function AuthGate({ children, guestOnly = false }: { children: React.ReactNode; guestOnly?: boolean }) {
+  const { isAuthenticated, isAuthLoading } = useAuth();
+  const location = useLocation();
+  if (isAuthLoading) {
+    return <div className="min-h-screen bg-white flex items-center justify-center"><div className="flex items-center gap-3 text-sm text-gray-500"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full" />در حال بررسی حساب...</div></div>;
+  }
+  if (guestOnly && isAuthenticated) return <Navigate to="/settings" replace />;
+  if (!guestOnly && !isAuthenticated) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  return <>{children}</>;
+}
+
+function SettingsPage() {
+  const { user, setUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [name, setName] = useState(user?.name || "");
+  const [avatar, setAvatar] = useState(user?.picture || "");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  const saveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    setNotice(null);
+    try {
+      const { user: updatedUser } = await authApi.updateProfile({ name, avatar });
+      setUser(updatedUser);
+      setNotice({ type: "success", text: "تغییرات پروفایل ذخیره شد." });
+    } catch (err) {
+      setNotice({ type: "error", text: err instanceof Error ? err.message : "ذخیره تغییرات انجام نشد" });
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const savePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordLoading(true);
+    setNotice(null);
+    try {
+      await authApi.updatePassword({ currentPassword: currentPassword || undefined, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setNotice({ type: "success", text: "رمز عبور شما با موفقیت تغییر کرد." });
+    } catch (err) {
+      setNotice({ type: "error", text: err instanceof Error ? err.message : "تغییر رمز انجام نشد" });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const signOut = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50 pt-32 pb-20 px-4" dir="rtl">
+      <div className="max-w-5xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <span className="inline-flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5 mb-4"><span className="w-2 h-2 bg-emerald-500 rounded-full" /> وارد حساب شده‌اید</span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">تنظیمات پروفایل</h1>
+          <p className="text-sm text-gray-500">اطلاعات حساب و امنیت خود را از اینجا مدیریت کنید.</p>
+        </motion.div>
+
+        {notice && <div role="status" className={`mb-5 rounded-2xl border px-4 py-3 text-sm ${notice.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}>{notice.text}</div>}
+
+        <div className="grid lg:grid-cols-[280px_1fr] gap-5 items-start">
+          <aside className="rounded-[28px] bg-white border border-black/[0.06] shadow-sm p-6 text-center lg:sticky lg:top-28">
+            <img src={avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=111827&color=fff&size=160`} alt={name} className="w-24 h-24 rounded-full object-cover mx-auto border-4 border-gray-100 shadow-md" referrerPolicy="no-referrer" />
+            <h2 className="font-bold text-gray-900 mt-4 truncate">{user?.name}</h2>
+            <p dir="ltr" className="text-xs text-gray-500 mt-1 truncate">{user?.email}</p>
+            <div className="mt-5 pt-5 border-t border-black/[0.06] space-y-2 text-xs text-gray-500">
+              <div className="flex justify-between"><span>وضعیت</span><span className="text-emerald-600 font-medium">فعال</span></div>
+              <div className="flex justify-between"><span>نوع حساب</span><span className="text-gray-800">{user?.role === "admin" ? "مدیر" : "کاربر"}</span></div>
+            </div>
+            <button onClick={signOut} className="w-full mt-6 rounded-full border border-red-100 bg-red-50 hover:bg-red-100 text-red-600 text-sm py-2.5 transition-colors">خروج از حساب</button>
+          </aside>
+
+          <div className="space-y-5">
+            <form onSubmit={saveProfile} className="rounded-[28px] bg-white border border-black/[0.06] shadow-sm p-6 sm:p-8">
+              <div className="mb-6"><h2 className="text-lg font-bold text-gray-900">اطلاعات شخصی</h2><p className="text-xs text-gray-500 mt-1">نام و تصویر نمایشی حساب شما</p></div>
+              <div className="space-y-5">
+                <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام نمایشی</label><input value={name} onChange={e => setName(e.target.value)} minLength={2} maxLength={80} required className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm" /></div>
+                <div><label className="text-xs font-medium text-gray-600 mb-2 block">ایمیل</label><input value={user?.email || ""} readOnly dir="ltr" className="w-full px-4 py-3 rounded-2xl bg-gray-100 border border-black/[0.04] text-gray-500 text-sm cursor-not-allowed" /><p className="text-[11px] text-gray-400 mt-2">ایمیل حساب برای حفظ امنیت قابل تغییر نیست.</p></div>
+                <div><label className="text-xs font-medium text-gray-600 mb-2 block">آدرس تصویر پروفایل</label><input value={avatar} onChange={e => setAvatar(e.target.value)} dir="ltr" type="url" placeholder="https://example.com/avatar.jpg" className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm" /></div>
+              </div>
+              <button disabled={profileLoading} className="mt-6 min-w-36 rounded-full bg-gray-900 hover:bg-black disabled:opacity-60 text-white text-sm font-semibold px-6 py-3 transition-colors">{profileLoading ? "در حال ذخیره..." : "ذخیره تغییرات"}</button>
+            </form>
+
+            <form onSubmit={savePassword} className="rounded-[28px] bg-white border border-black/[0.06] shadow-sm p-6 sm:p-8">
+              <div className="mb-6"><h2 className="text-lg font-bold text-gray-900">امنیت حساب</h2><p className="text-xs text-gray-500 mt-1">یک رمز عبور قوی با حداقل ۸ کاراکتر انتخاب کنید.</p></div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div><label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور فعلی</label><input value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} type="password" dir="ltr" autoComplete="current-password" placeholder="برای حساب گوگل اختیاری است" className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-black/[0.06] focus:bg-white focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm" /></div>
+                <div><label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور جدید</label><input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" dir="ltr" minLength={8} required autoComplete="new-password" placeholder="حداقل ۸ کاراکتر" className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-black/[0.06] focus:bg-white focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm" /></div>
+              </div>
+              <button disabled={passwordLoading} className="mt-6 min-w-36 rounded-full bg-white border border-black/10 hover:bg-gray-50 disabled:opacity-60 text-gray-800 text-sm font-semibold px-6 py-3 transition-colors">{passwordLoading ? "در حال تغییر..." : "تغییر رمز عبور"}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -808,8 +934,9 @@ function AnimatedRoutes({ onOpenLegal }: { onOpenLegal: (p: string) => void }) {
         <Route path="/careers" element={<CareersPage onOpenLegal={onOpenLegal} />} />
         <Route path="/news" element={<NewsPage onOpenLegal={onOpenLegal} />} />
         <Route path="/partners" element={<PartnersPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<AuthGate guestOnly><LoginPage /></AuthGate>} />
+        <Route path="/signup" element={<AuthGate guestOnly><SignupPage /></AuthGate>} />
+        <Route path="/settings" element={<AuthGate><SettingsPage /></AuthGate>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>

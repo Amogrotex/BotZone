@@ -56,6 +56,7 @@ npm run dev
 ## Backend API (protected)
 
 - `POST /api/auth/signup`, `/login`, `/google`, `GET /me`
+- `PATCH /api/auth/me` (profile name/avatar), `PATCH /api/auth/password`
 - `GET /api/bots` (needs JWT)
 - `POST /api/bots` (creates bot, token encrypted)
 - `POST /api/bots/:id/files` (upload -> encrypted, stored in gitignored storage)
