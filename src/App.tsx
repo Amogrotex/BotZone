@@ -26,6 +26,7 @@ import {
   Menu,
   MessageCircle,
   Minus,
+  Moon,
   Package,
   Palette,
   Phone,
@@ -38,6 +39,7 @@ import {
   Sparkles,
   Star,
   Store,
+  Sun,
   Tag,
   Trash2,
   UserPlus,
@@ -66,6 +68,7 @@ type Product = {
 type CartLine = { product: Product; quantity: number };
 type AuthMode = "login" | "register";
 type AuthUser = { name: string; contact: string };
+type Theme = "light" | "dark";
 
 const products: Product[] = [
   {
@@ -172,6 +175,8 @@ function Navbar({
   onLogin,
   onRegister,
   onLogout,
+  onToggleTheme,
+  theme,
   user,
   search,
   setSearch,
@@ -181,6 +186,8 @@ function Navbar({
   onLogin: () => void;
   onRegister: () => void;
   onLogout: () => void;
+  onToggleTheme: () => void;
+  theme: Theme;
   user: AuthUser | null;
   search: string;
   setSearch: (value: string) => void;
@@ -214,6 +221,9 @@ function Navbar({
         </div>
 
         <div className="nav-actions">
+          <button className="circle-button theme-toggle" onClick={onToggleTheme} aria-label={theme === "dark" ? "فعال کردن حالت روشن" : "فعال کردن حالت تاریک"} title={theme === "dark" ? "حالت روشن" : "حالت تاریک"}>
+            <span className="theme-icon">{theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}</span>
+          </button>
           <button className="circle-button search-toggle" onClick={() => setSearchOpen((value) => !value)} aria-label="جستجو">
             {searchOpen ? <X size={19} /> : <Search size={19} />}
           </button>
@@ -707,6 +717,11 @@ function App() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("botzone_theme");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("botzone_session");
@@ -719,6 +734,14 @@ function App() {
   const [toast, setToast] = useState("");
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem("botzone_theme", theme);
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = theme === "dark" ? "#0c0d12" : "#f6f7fb";
+  }, [theme]);
 
   useEffect(() => {
     document.body.style.overflow = cartOpen || authMode ? "hidden" : "";
@@ -797,6 +820,8 @@ function App() {
         onLogin={() => setAuthMode("login")}
         onRegister={() => setAuthMode("register")}
         onLogout={logout}
+        onToggleTheme={() => setTheme((current) => current === "light" ? "dark" : "light")}
+        theme={theme}
         user={user}
         search={search}
         setSearch={setSearch}

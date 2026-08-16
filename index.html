@@ -6,6 +6,19 @@
     <meta name="theme-color" content="#f6f7fb" />
     <meta name="description" content="بات‌زون؛ بازار تخصصی ربات‌ها، افزونه‌ها و آیتم‌های دیجیتال" />
     <title>بات‌زون | بازار ربات و آیتم‌های دیجیتال</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("botzone_theme");
+          const theme = saved === "light" || saved === "dark"
+            ? saved
+            : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#0c0d12" : "#f6f7fb";
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
