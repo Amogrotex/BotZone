@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f6f7fb" />
-    <meta name="description" content="بات‌زون؛ بازار تخصصی ربات‌ها، افزونه‌ها و آیتم‌های دیجیتال" />
-    <title>بات‌زون | بازار ربات و آیتم‌های دیجیتال</title>
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>مدیریت امن | بات‌زون</title>
     <script>
       (() => {
         try {
@@ -15,14 +15,12 @@
             : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
           document.documentElement.dataset.theme = theme;
           document.documentElement.style.colorScheme = theme;
-          document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#0c0d12" : "#f6f7fb";
         } catch (_) {}
       })();
     </script>
-    <script type="module" crossorigin src="/BotZone/assets/main-C9BJ7fkR.js"></script>
-    <link rel="stylesheet" crossorigin href="/BotZone/assets/main-CINsV2Tc.css">
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

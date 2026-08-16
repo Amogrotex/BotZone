@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { supabase } from "./lib/supabase";
 import {
   ArrowLeft,
   ArrowUpLeft,
@@ -70,92 +71,48 @@ type AuthMode = "login" | "register";
 type AuthUser = { name: string; contact: string };
 type Theme = "light" | "dark";
 
-const products: Product[] = [
-  {
-    id: 1,
-    title: "ربات فروشگاهی پلاس",
-    subtitle: "فروش خودکار، درگاه پرداخت و مدیریت سفارش‌ها",
-    type: "bot",
-    category: "فروش و پرداخت",
-    price: 1_490_000,
-    oldPrice: 1_790_000,
-    rating: 4.9,
-    reviews: 128,
-    badge: "پرفروش",
-    icon: ShoppingBag,
-    tone: "violet",
-  },
-  {
-    id: 2,
-    title: "دستیار هوشمند آریا",
-    subtitle: "پاسخ‌گویی ۲۴ ساعته با هوش مصنوعی فارسی",
-    type: "bot",
-    category: "هوش مصنوعی",
-    price: 2_190_000,
-    rating: 4.8,
-    reviews: 94,
-    badge: "جدید",
-    icon: BrainCircuit,
-    tone: "blue",
-  },
-  {
-    id: 3,
-    title: "مدیر گروه حرفه‌ای",
-    subtitle: "ضد اسپم، خوش‌آمدگویی و گزارش‌های دقیق",
-    type: "bot",
-    category: "مدیریت گروه",
-    price: 890_000,
-    oldPrice: 1_050_000,
-    rating: 4.7,
-    reviews: 76,
-    icon: UsersRound,
-    tone: "orange",
-  },
-  {
-    id: 4,
-    title: "قالب نئونی مینی‌اپ",
-    subtitle: "قالب راست‌چین فروشگاهی با ۱۲ صفحه آماده",
-    type: "item",
-    category: "قالب و رابط کاربری",
-    price: 640_000,
-    rating: 4.9,
-    reviews: 58,
-    badge: "ویژه",
-    icon: Palette,
-    tone: "pink",
-  },
-  {
-    id: 5,
-    title: "پک استیکر سه‌بعدی",
-    subtitle: "بیش از ۱۲۰ استیکر با فایل منبع و کیفیت بالا",
-    type: "item",
-    category: "محتوای گرافیکی",
-    price: 290_000,
-    oldPrice: 390_000,
-    rating: 4.6,
-    reviews: 41,
-    icon: Sparkles,
-    tone: "green",
-  },
-  {
-    id: 6,
-    title: "افزونه پرداخت سریع",
-    subtitle: "اتصال امن به درگاه‌ها با نصب یک‌کلیکی",
-    type: "item",
-    category: "افزونه",
-    price: 480_000,
-    rating: 4.8,
-    reviews: 67,
-    icon: CreditCard,
-    tone: "cyan",
-  },
-];
+type ProductRow = {
+  id: number;
+  title: string;
+  subtitle: string;
+  type: "bot" | "item";
+  category: string;
+  price: number;
+  old_price: number | null;
+  rating: number;
+  reviews: number;
+  badge: string | null;
+  tone: string;
+};
+
+const iconForProduct = (row: ProductRow): LucideIcon => {
+  if (row.category.includes("هوش")) return BrainCircuit;
+  if (row.category.includes("مدیریت") || row.category.includes("گروه")) return UsersRound;
+  if (row.category.includes("پرداخت")) return CreditCard;
+  if (row.category.includes("طراحی") || row.category.includes("قالب")) return Palette;
+  return row.type === "bot" ? Bot : Box;
+};
+
+const toProduct = (row: ProductRow): Product => ({
+  id: row.id,
+  title: row.title,
+  subtitle: row.subtitle,
+  type: row.type,
+  category: row.category,
+  price: Number(row.price),
+  oldPrice: row.old_price === null ? undefined : Number(row.old_price),
+  rating: Number(row.rating),
+  reviews: row.reviews,
+  badge: row.badge ?? undefined,
+  icon: iconForProduct(row),
+  tone: row.tone,
+});
 
 const categories = [
-  { title: "ربات‌های فروش", count: 32, icon: Store, tone: "violet" },
-  { title: "هوش مصنوعی", count: 18, icon: BrainCircuit, tone: "blue" },
-  { title: "مدیریت گروه", count: 24, icon: UsersRound, tone: "orange" },
-  { title: "آیتم‌های طراحی", count: 46, icon: Palette, tone: "pink" },
+  { title: "ربات‌های فروش", icon: Store, tone: "violet", matches: (product: Product) => product.type === "bot" && (product.category.includes("فروش") || product.category.includes("پرداخت")) },
+  { title: "هوش مصنوعی", icon: BrainCircuit, tone: "blue", matches: (product: Product) => product.category.includes("هوش") },
+  { title: "مدیریت گروه", icon: UsersRound, tone: "orange", matches: (product: Product) => product.category.includes("مدیریت") || product.category.includes("گروه") },
+  { title: "آیتم‌های طراحی", icon: Palette, tone: "pink", matches: (product: Product) => product.type === "item" },
 ];
 
 const formatNumber = (value: number) => value.toLocaleString("fa-IR");
@@ -294,7 +251,7 @@ function Navbar({
   );
 }
 
-function Hero({ onRegister }: { onRegister: () => void }) {
+function Hero({ onRegister, productCount }: { onRegister: () => void; productCount: number }) {
   const heroImage = `${import.meta.env.BASE_URL}bot-hero.png`;
   return (
     <main id="home" className="hero section-shell">
@@ -330,7 +287,7 @@ function Hero({ onRegister }: { onRegister: () => void }) {
       </div>
 
       <div className="hero-stats">
-        <div><strong>+۱۲۰</strong><span>محصول حرفه‌ای</span></div>
+        <div><strong>{formatNumber(productCount)}</strong><span>محصول منتشرشده</span></div>
         <i />
         <div><strong>+۲,۵۰۰</strong><span>مشتری راضی</span></div>
         <i />
@@ -342,15 +299,15 @@ function Hero({ onRegister }: { onRegister: () => void }) {
   );
 }
 
-function CategoryStrip() {
+function CategoryStrip({ products }: { products: Product[] }) {
   return (
     <section className="categories section-shell reveal" aria-label="دسته‌بندی‌ها">
-      <div className="section-kicker"><LayoutGrid size={17} /> دسته‌بندی‌های محبوب</div>
+      <div className="section-kicker"><LayoutGrid size={17} /> دسته‌بندی‌های فروشگاه</div>
       <div className="category-grid">
-        {categories.map(({ title, count, icon: Icon, tone }) => (
+        {categories.map(({ title, icon: Icon, tone, matches }) => (
           <a href="#market" className="category-card" key={title}>
             <span className={`category-icon ${tone}`}><Icon size={25} /></span>
-            <span className="category-info"><strong>{title}</strong><small>{formatNumber(count)} محصول</small></span>
+            <span className="category-info"><strong>{title}</strong><small>{formatNumber(products.filter(matches).length)} محصول</small></span>
             <span className="category-arrow"><ArrowUpLeft size={18} /></span>
           </a>
         ))}
@@ -409,7 +366,7 @@ function ProductCard({
   );
 }
 
-function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) => void; search: string; setSearch: (value: string) => void }) {
+function Marketplace({ products, loading, onAdd, search, setSearch }: { products: Product[]; loading: boolean; onAdd: (product: Product) => void; search: string; setSearch: (value: string) => void }) {
   const [filter, setFilter] = useState<"all" | "bot" | "item">("all");
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set());
 
@@ -420,7 +377,7 @@ function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) =
       const inSearch = !normalized || `${product.title} ${product.subtitle} ${product.category}`.toLowerCase().includes(normalized);
       return inTab && inSearch;
     });
-  }, [filter, search]);
+  }, [filter, products, search]);
 
   const toggleFavorite = (id: number) => {
     setFavorites((current) => {
@@ -435,8 +392,8 @@ function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) =
       <div className="section-heading">
         <div>
           <div className="eyebrow"><Sparkles size={16} /> انتخاب‌های حرفه‌ای</div>
-          <h2>محبوب‌ترین‌های <span>این هفته</span></h2>
-          <p>محصولات تست‌شده و آماده نصب برای یک شروع سریع و مطمئن.</p>
+          <h2>محصولات <span>فروشگاه</span></h2>
+          <p>ربات‌ها و آیتم‌های منتشرشده توسط تیم بات‌زون.</p>
         </div>
         <a href="#market" className="view-all">مشاهده همه محصولات <ArrowLeft size={18} /></a>
       </div>
@@ -454,7 +411,13 @@ function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) =
         </label>
       </div>
 
-      {filteredProducts.length > 0 ? (
+      {loading ? (
+        <div className="empty-products catalog-loading">
+          <span><LoaderCircle className="spinner" size={30} /></span>
+          <h3>در حال دریافت فروشگاه</h3>
+          <p>محصولات در حال بارگذاری هستند.</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <div className="product-grid">
           {filteredProducts.map((product) => (
             <ProductCard
@@ -465,6 +428,12 @@ function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) =
               onAdd={() => onAdd(product)}
             />
           ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="empty-products store-empty">
+          <span><Package size={30} /></span>
+          <h3>فروشگاه هنوز محصولی ندارد</h3>
+          <p>محصولات جدید به‌زودی از پنل مدیریت منتشر می‌شوند.</p>
         </div>
       ) : (
         <div className="empty-products">
@@ -731,6 +700,8 @@ function App() {
     }
   });
   const [search, setSearch] = useState("");
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(Boolean(supabase));
   const [toast, setToast] = useState("");
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -742,6 +713,28 @@ function App() {
     const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (themeMeta) themeMeta.content = theme === "dark" ? "#0c0d12" : "#f6f7fb";
   }, [theme]);
+
+  useEffect(() => {
+    const client = supabase;
+    if (!client) {
+      setCatalogLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const loadCatalog = async () => {
+      const { data, error } = await client.from("products").select("id,title,subtitle,type,category,price,old_price,rating,reviews,badge,tone").eq("active", true).order("created_at", { ascending: false });
+      if (!cancelled) {
+        setCatalogProducts(error ? [] : ((data ?? []) as ProductRow[]).map(toProduct));
+        setCatalogLoading(false);
+      }
+    };
+    void loadCatalog();
+    window.addEventListener("focus", loadCatalog);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", loadCatalog);
+    };
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = cartOpen || authMode ? "hidden" : "";
@@ -826,9 +819,9 @@ function App() {
         search={search}
         setSearch={setSearch}
       />
-      <Hero onRegister={() => setAuthMode("register")} />
-      <CategoryStrip />
-      <Marketplace onAdd={addToCart} search={search} setSearch={setSearch} />
+      <Hero onRegister={() => setAuthMode("register")} productCount={catalogProducts.length} />
+      <CategoryStrip products={catalogProducts} />
+      <Marketplace products={catalogProducts} loading={catalogLoading} onAdd={addToCart} search={search} setSearch={setSearch} />
       <WhyUs />
       <Newsletter />
       <Footer />
