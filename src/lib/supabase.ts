@@ -1,7 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+// Supabase publishable keys are intentionally browser-safe. The secret/service
+// role key must never be added here or to any frontend environment variable.
+const publicProjectUrl = "https://ftsnqhbhqxarzeevjrsv.supabase.co";
+const publicPublishableKey = "sb_publishable_B1WqCUDypQkXYr1G3ti9mQ_990aVAnR";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() || publicProjectUrl;
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || publicPublishableKey;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 
