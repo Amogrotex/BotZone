@@ -1,32 +1,30 @@
 {
-  "name": "react-vite-tailwind",
+  "name": "botzone-persian-marketplace",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build",
+    "build:cloudflare": "tsc -b && vite build",
+    "preview": "vite preview",
+    "worker:check": "tsc -p worker/tsconfig.json",
+    "worker:dev": "wrangler dev --config worker/wrangler.jsonc --local",
+    "worker:hash-password": "node worker/scripts/hash-password.mjs",
+    "worker:session-secret": "node worker/scripts/hash-password.mjs --session-secret"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
-    "clsx": "2.1.1",
-    "framer-motion": "^13.1.0",
-    "jwt-decode": "^4.0.0",
+    "@vitejs/plugin-react": "5.1.1",
+    "lucide-react": "^0.468.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "react-router-dom": "^7.18.2",
-    "tailwind-merge": "3.4.0"
+    "typescript": "5.9.3",
+    "vite": "7.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "4.1.17",
-    "@types/node": "22.19.17",
+    "@cloudflare/workers-types": "^5.20260816.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "5.1.1",
-    "tailwindcss": "4.1.17",
-    "typescript": "5.9.3",
-    "vite": "7.3.2",
-    "vite-plugin-singlefile": "2.3.0"
+    "wrangler": "^4.123.0"
   }
 }

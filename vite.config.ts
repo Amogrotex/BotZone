@@ -1,19 +1,23 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// https://vite.dev/config/
 export default defineConfig({
-  base: "/BotZone/",
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
+  // GitHub Pages uses /BotZone/; the Cloudflare workflow builds for root.
+  base: process.env.VITE_BASE_PATH || "/BotZone/",
+  plugins: [react()],
+  build: {
+    outDir: "docs",
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        storefront: resolve(process.cwd(), "index.html"),
+        admin: resolve(process.cwd(), "admin/index.html"),
+      },
     },
+  },
+  server: {
+    host: "0.0.0.0",
+    allowedHosts: true,
   },
 });

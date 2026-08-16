@@ -1,73 +1,104 @@
-# BotZone - ربات‌های هوشمند سروش
+# BotZone
 
-Modern dark UI + Full-stack with protected backend.
+Persian bot and digital-item marketplace with a Cloudflare Worker backend deployed by GitHub Actions.
 
-**Live:** https://Amogrotex.github.io/BotZone/
+## Architecture
 
-## Structure
+- **Cloudflare Worker**: permanent API and static-site host
+- **Cloudflare D1**: product database and login rate-limit state
+- **GitHub Actions**: builds, validates, migrates, and deploys the Worker
+- **Administrator authentication**: PBKDF2 password hash plus short-lived HMAC sessions
+- **GitHub Pages**: retained as a temporary fallback deployment
 
-- `src/` - Frontend (React + Vite + Tailwind + Framer Motion) -> deployed to GitHub Pages (`/docs`)
-- `server/` - **Private backend** (Express + MongoDB + JWT + AES-256 encryption) -> NOT accessible to cloners
+A GitHub Actions runner is not the backend. The workflow deploys the persistent backend to Cloudflare.
 
-## 🔒 How files are protected when someone clones repo?
+## API security
 
-This repo can be public, but **cloners CAN'T access your real data**:
+- No plaintext administrator password is stored in Git or browser JavaScript.
+- Passwords are verified against PBKDF2-SHA256 with at least 100,000 iterations.
+- Session tokens are signed at the edge and expire after eight hours.
+- Five failed login attempts trigger a 15-minute IP-based lockout.
+- Product input is length-, type-, and range-validated.
+- All SQL uses bound parameters.
+- Cross-origin browser mutation requests are denied.
+- Cloudflare deployment credentials remain encrypted GitHub Actions secrets.
 
-| What cloner gets | What they DON'T get |
-|---|---|
-| ✅ Frontend React code | ❌ `.env` files (gitignored) |
-| ✅ Backend source code (no secrets) | ❌ `MONGODB_URI` - no database |
-| ✅ Empty `server/storage/` folder | ❌ Encrypted bot files (gitignored, stored outside git) |
-| ✅ Dummy `.env.example` | ❌ `JWT_SECRET`, `FILE_ENCRYPTION_KEY` |
-| ✅ UI only | ❌ Real bot tokens (encrypted in DB) |
+No system is literally unhackable. Use a unique password, enable MFA on GitHub and Cloudflare, rotate exposed keys, and keep dependencies updated.
 
-### Protection layers:
-1. **`.env` gitignored** - all secrets in `.env` (frontend and `server/.env`) never committed
-2. **`server/storage/` & `uploads/` gitignored** - private files are encrypted and stored outside git
-3. **AES-256-GCM encryption** - even if someone steals storage, need 32-byte hex key from `.env`
-4. **MongoDB external** - data lives in Atlas, not in repo
-5. **JWT auth** - `/api/bots` requires `Bearer token`, no token = 403
-6. **Make repo private** (optional): GitHub → Settings → Change visibility → Private
+## One-time Cloudflare setup
 
-## Quick Start
+### 1. Create the D1 database
 
-### Frontend only (GitHub Pages)
+Create a D1 database named `botzone` in the Cloudflare dashboard or with Wrangler:
+
 ```bash
-npm install
-npm run dev # http://localhost:5173/BotZone/
-npm run build # outputs to dist/ -> copy to docs/ for GitHub Pages
+npx wrangler login
+npx wrangler d1 create botzone
 ```
 
-### Full-stack with backend + database
-```bash
-# 1. Backend
-cd server
-npm install
-cp .env.example .env
-# Edit .env: MONGODB_URI, JWT_SECRET (openssl rand -base64 32), FILE_ENCRYPTION_KEY (openssl rand -hex 32), GOOGLE_CLIENT_ID
-npm run dev # http://localhost:3001
+Copy the returned database ID.
 
-# 2. Frontend (in another terminal, root)
-npm install
-# Create .env with VITE_API_URL=http://localhost:3001/api and VITE_GOOGLE_CLIENT_ID
-npm run dev
+### 2. Generate administrator credentials locally
+
+Do not use a password previously posted in chat.
+
+```bash
+npm run worker:hash-password
+npm run worker:session-secret
 ```
 
-## Backend API (protected)
+The first command requests a hidden password and prints a safe PBKDF2 hash. The second prints a random session-signing secret.
 
-- `POST /api/auth/signup`, `/login`, `/google`, `GET /me`
-- `GET /api/bots` (needs JWT)
-- `POST /api/bots` (creates bot, token encrypted)
-- `POST /api/bots/:id/files` (upload -> encrypted, stored in gitignored storage)
-- `GET /api/bots/:id/files/:fileId/download` (only owner, decrypts on fly)
+### 3. Add GitHub Actions secrets
 
-See `server/README.md` for full docs.
+Open **GitHub repository → Settings → Secrets and variables → Actions** and add:
 
-## Deploy
+| Secret | Value |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Scoped token with Workers Scripts Edit and D1 Edit permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+| `CLOUDFLARE_D1_DATABASE_ID` | Database ID from step 1 |
+| `ADMIN_EMAIL` | Private administrator email |
+| `ADMIN_PASSWORD_HASH` | Output of `npm run worker:hash-password` |
+| `SESSION_SECRET` | Output of `npm run worker:session-secret` |
 
-- Frontend: Already on GitHub Pages from `main` `/docs` folder (multi-file build)
-- Backend: Deploy `server/` to Render/Railway/Fly.io, set env vars from `.env`
+Never put these values in source files or chat.
 
-## License
+### 4. Deploy
 
-Proprietary - source visible for learning, but private data, tokens, and encrypted files are not included and not usable without permission and env keys.
+The workflow template `deployment/deploy-cloudflare.workflow.yml` automatically:
+
+1. Installs locked dependencies.
+2. Type-checks the frontend and Worker.
+3. Builds the website for same-origin hosting.
+4. Applies D1 migrations.
+5. Deploys the API and website to Cloudflare Workers.
+
+After granting the GitHub connection workflow permission, copy the template to `.github/workflows/deploy-cloudflare.yml`, then run **Deploy BotZone to Cloudflare** under the repository's Actions tab.
+
+## Routes
+
+- `/` — storefront
+- `/admin/` — administrator login and product management
+- `/api/health` — backend health check
+- `/api/products` — active public products
+- `/api/admin/*` — signed-session administrator API
+
+The catalog starts empty. Products become public only after the administrator creates and activates them.
+
+## Local validation
+
+```bash
+npm ci
+npm run build
+npm run worker:check
+npm audit
+```
+
+For local Worker development, replace the D1 placeholder in a local copy of `worker/wrangler.jsonc`, create `worker/.dev.vars` containing local-only administrator secrets, then run:
+
+```bash
+npm run worker:dev
+```
+
+`worker/.dev.vars` is ignored by Git and must never be committed.

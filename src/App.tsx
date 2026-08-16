@@ -1,833 +1,826 @@
-import { useState, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
-import { useGoogleLogin } from "@react-oauth/google";
-import { useAuth } from "./context/AuthContext";
+import { useEffect, useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { isBackendConfigured, listPublicProducts, type BackendProduct } from "./lib/backend";
+import {
+  ArrowLeft,
+  ArrowUpLeft,
+  BadgeCheck,
+  Bot,
+  Box,
+  BrainCircuit,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  Clock3,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Headphones,
+  Heart,
+  Instagram,
+  LayoutGrid,
+  LoaderCircle,
+  LockKeyhole,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  MessageCircle,
+  Minus,
+  Moon,
+  Package,
+  Palette,
+  Phone,
+  Plus,
+  Search,
+  Send,
+  ShieldCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Store,
+  Sun,
+  Tag,
+  Trash2,
+  UserPlus,
+  UserRound,
+  UsersRound,
+  WandSparkles,
+  X,
+  Zap,
+} from "lucide-react";
 
-function ScrollProgress() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001,
-  });
+type Product = {
+  id: number;
+  title: string;
+  subtitle: string;
+  type: "bot" | "item";
+  category: string;
+  price: number;
+  oldPrice?: number;
+  rating: number;
+  reviews: number;
+  badge?: string;
+  icon: LucideIcon;
+  tone: string;
+};
+
+type CartLine = { product: Product; quantity: number };
+type AuthMode = "login" | "register";
+type AuthUser = { name: string; contact: string };
+type Theme = "light" | "dark";
+
+type ProductRow = BackendProduct;
+
+const iconForProduct = (row: ProductRow): LucideIcon => {
+  if (row.category.includes("هوش")) return BrainCircuit;
+  if (row.category.includes("مدیریت") || row.category.includes("گروه")) return UsersRound;
+  if (row.category.includes("پرداخت")) return CreditCard;
+  if (row.category.includes("طراحی") || row.category.includes("قالب")) return Palette;
+  return row.type === "bot" ? Bot : Box;
+};
+
+const toProduct = (row: ProductRow): Product => ({
+  id: row.id,
+  title: row.title,
+  subtitle: row.subtitle,
+  type: row.type,
+  category: row.category,
+  price: Number(row.price),
+  oldPrice: row.old_price === null ? undefined : Number(row.old_price),
+  rating: Number(row.rating),
+  reviews: row.reviews,
+  badge: row.badge ?? undefined,
+  icon: iconForProduct(row),
+  tone: row.tone,
+});
+
+const categories = [
+  { title: "ربات‌های فروش", icon: Store, tone: "violet", matches: (product: Product) => product.type === "bot" && (product.category.includes("فروش") || product.category.includes("پرداخت")) },
+  { title: "هوش مصنوعی", icon: BrainCircuit, tone: "blue", matches: (product: Product) => product.category.includes("هوش") },
+  { title: "مدیریت گروه", icon: UsersRound, tone: "orange", matches: (product: Product) => product.category.includes("مدیریت") || product.category.includes("گروه") },
+  { title: "آیتم‌های طراحی", icon: Palette, tone: "pink", matches: (product: Product) => product.type === "item" },
+];
+
+const formatNumber = (value: number) => value.toLocaleString("fa-IR");
+
+function Logo() {
   return (
-    <motion.div
-      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 origin-left z-[100] pointer-events-none"
-      style={{ scaleX }}
-    />
+    <a href="#home" className="brand" aria-label="بات‌زون">
+      <span className="brand-mark"><Bot size={23} strokeWidth={2.2} /></span>
+      <span className="brand-name">بات‌زون</span>
+    </a>
   );
 }
 
-/* ---------- Animation helpers ---------- */
-const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-60px" } as const,
-  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
-};
-
-const staggerContainer = {
-  initial: {},
-  whileInView: { transition: { staggerChildren: 0.08 } },
-  viewport: { once: true, margin: "-80px" } as const,
-};
-
-const staggerItem = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true } as const,
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-};
-
-function PageTransition({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+function Navbar({
+  cartCount,
+  onCart,
+  onLogin,
+  onRegister,
+  onLogout,
+  onToggleTheme,
+  theme,
+  user,
+  search,
+  setSearch,
+}: {
+  cartCount: number;
+  onCart: () => void;
+  onLogin: () => void;
+  onRegister: () => void;
+  onLogout: () => void;
+  onToggleTheme: () => void;
+  theme: Theme;
+  user: AuthUser | null;
+  search: string;
+  setSearch: (value: string) => void;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const closeMenu = () => setMenuOpen(false);
+  const initial = user?.name.trim().charAt(0) || "ک";
+
   return (
-    <motion.div
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-4 sm:top-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none"
-    >
-      <div className="w-full max-w-5xl pointer-events-auto">
-        <motion.nav
-          animate={{
-            backgroundColor: scrolled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.70)",
-            boxShadow: scrolled
-              ? "0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05)"
-              : "0 4px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)",
-          }}
-          transition={{ duration: 0.4 }}
-          className={`relative flex items-center justify-between gap-4 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full border backdrop-blur-2xl ${
-            scrolled ? "border-black/[0.08]" : "border-black/[0.06]"
-          }`}
-        >
-          <Link to="/" className="flex items-center gap-2.5 group shrink-0 pl-1">
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 2 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-lg shadow-black/10"
-            >
-              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </motion.div>
-            <span className="text-[17px] font-bold tracking-tight text-gray-900">بات‌زون</span>
-          </Link>
+    <header className={`nav-wrap ${scrolled ? "scrolled" : ""}`}>
+      <nav className="topbar" aria-label="ناوبری اصلی">
+        <Logo />
 
-          <div className="hidden lg:flex items-center gap-1 bg-black/[0.03] rounded-full p-1">
-            {[
-              { label: "امکانات", href: "/#features" },
-              { label: "تعرفه‌ها", href: "/#pricing" },
-              { label: "درباره ما", href: "/about" },
-              { label: "وبلاگ", href: "/blog" },
-            ].map((item) => (
-              <Link key={item.label} to={item.href} className="text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-white px-4 py-2 rounded-full transition-all duration-200">
-                {item.label}
-              </Link>
-            ))}
-          </div>
+        <div className="nav-links">
+          <a className="active" href="#home">خانه</a>
+          <a href="#market">فروشگاه ربات‌ها</a>
+          <a href="#market">فروشگاه آیتم</a>
+          <a href="#why-us">چرا بات‌زون؟</a>
+          <a href="#footer">پشتیبانی</a>
+        </div>
 
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            {user ? (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white border border-black/[0.06] shadow-sm">
-                  <img src={user.picture || `https://i.pravatar.cc/100?u=${user.email}`} alt={user.name} className="w-7 h-7 rounded-full" />
-                  <span className="text-xs font-medium text-gray-700 max-w-[100px] truncate">{user.name}</span>
+        <div className="nav-actions">
+          <button className="circle-button theme-toggle" onClick={onToggleTheme} aria-label={theme === "dark" ? "فعال کردن حالت روشن" : "فعال کردن حالت تاریک"} title={theme === "dark" ? "حالت روشن" : "حالت تاریک"}>
+            <span className="theme-icon">{theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}</span>
+          </button>
+          <button className="circle-button search-toggle" onClick={() => setSearchOpen((value) => !value)} aria-label="جستجو">
+            {searchOpen ? <X size={19} /> : <Search size={19} />}
+          </button>
+          <button className="cart-button" onClick={onCart} aria-label="سبد خرید">
+            <ShoppingCart size={19} />
+            <span className="cart-label">سبد خرید</span>
+            {cartCount > 0 && <span className="cart-count">{formatNumber(cartCount)}</span>}
+          </button>
+          {user ? (
+            <div className="user-menu-wrap">
+              <button className="user-chip" onClick={() => setAccountOpen((value) => !value)} aria-expanded={accountOpen}>
+                <span className="user-avatar">{initial}</span>
+                <span className="user-chip-copy"><small>حساب من</small><strong>{user.name}</strong></span>
+                <ChevronDown size={15} className={accountOpen ? "rotated" : ""} />
+              </button>
+              {accountOpen && (
+                <div className="account-dropdown">
+                  <div><span className="user-avatar large">{initial}</span><p><strong>{user.name}</strong><small>{user.contact}</small></p></div>
+                  <a href="#market" onClick={() => setAccountOpen(false)}><Package size={17} /> سفارش‌های من</a>
+                  <button onClick={() => { setAccountOpen(false); onLogout(); }}><LogOut size={17} /> خروج از حساب</button>
                 </div>
-                <button onClick={logout} className="text-[12px] text-gray-500 hover:text-red-600 px-3 py-2 rounded-full hover:bg-red-50 transition-colors">خروج</button>
-              </div>
-            ) : (
-              <>
-                <Link to="/login" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-full hover:bg-black/[0.04] transition-all">
-                  ورود
-                </Link>
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link to="/signup" className="text-[13px] font-semibold text-white bg-gray-900 hover:bg-black px-5 py-2.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] block">
-                    ثبت نام
-                  </Link>
-                </motion.div>
-              </>
-            )}
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-9 h-9 rounded-full bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] flex items-center justify-center text-gray-600"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </motion.button>
-        </motion.nav>
-
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.96 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="md:hidden mt-3 p-2 rounded-[24px] bg-white/90 backdrop-blur-2xl border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.12)]"
-            >
-              <div className="rounded-[18px] bg-gray-50/80 border border-black/[0.03] p-2 space-y-1">
-                {[
-                  { label: "امکانات", href: "/#features", icon: "✨" },
-                  { label: "تعرفه‌ها", href: "/#pricing", icon: "💳" },
-                  { label: "درباره ما", href: "/about", icon: "👥" },
-                  { label: "وبلاگ", href: "/blog", icon: "📝" },
-                ].map((item) => (
-                  <Link key={item.label} to={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-all">
-                    <span className="w-8 h-8 rounded-full bg-white border border-black/[0.06] flex items-center justify-center text-sm">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                ))}
-                {user ? (
-                  <div className="px-2 py-2 border-t border-black/[0.06] mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2"><img src={user.picture} className="w-8 h-8 rounded-full" /><span className="text-sm">{user.name}</span></div>
-                    <button onClick={() => { logout(); setMenuOpen(false); }} className="text-xs text-red-500">خروج</button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/[0.06] mt-2">
-                    <Link to="/login" onClick={() => setMenuOpen(false)} className="text-center text-sm bg-white border px-4 py-3 rounded-full">ورود</Link>
-                    <Link to="/signup" onClick={() => setMenuOpen(false)} className="text-center text-sm bg-gray-900 text-white px-4 py-3 rounded-full">ثبت نام</Link>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              )}
+            </div>
+          ) : (
+            <div className="desktop-auth">
+              <button className="login-button secondary" onClick={onLogin}>ورود</button>
+              <button className="register-button" onClick={onRegister}><UserPlus size={17} /> ثبت‌نام</button>
+            </div>
           )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+          <button className="circle-button menu-toggle" onClick={() => setMenuOpen((value) => !value)} aria-label="منو">
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
+
+        {searchOpen && (
+          <div className="nav-search-panel">
+            <Search size={20} />
+            <input
+              autoFocus
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جستجو میان ربات‌ها و آیتم‌ها..."
+            />
+            {search && <button onClick={() => setSearch("")}><X size={18} /></button>}
+          </div>
+        )}
+      </nav>
+
+      {menuOpen && (
+        <div className="mobile-menu">
+          {user && <div className="mobile-user"><span className="user-avatar">{initial}</span><div><strong>{user.name}</strong><small>{user.contact}</small></div></div>}
+          <a href="#home" onClick={closeMenu}>خانه</a>
+          <a href="#market" onClick={closeMenu}>فروشگاه ربات‌ها</a>
+          <a href="#market" onClick={closeMenu}>فروشگاه آیتم</a>
+          <a href="#why-us" onClick={closeMenu}>چرا بات‌زون؟</a>
+          <a href="#footer" onClick={closeMenu}>پشتیبانی</a>
+          {user ? (
+            <button className="mobile-logout" onClick={() => { closeMenu(); onLogout(); }}><LogOut size={18} /> خروج از حساب</button>
+          ) : (
+            <div className="mobile-auth-row">
+              <button className="mobile-login" onClick={() => { closeMenu(); onLogin(); }}><LogIn size={18} /> ورود</button>
+              <button className="mobile-register" onClick={() => { closeMenu(); onRegister(); }}><UserPlus size={18} /> ثبت‌نام رایگان</button>
+            </div>
+          )}
+        </div>
+      )}
+    </header>
   );
 }
 
-function Hero() {
+function Hero({ onRegister, productCount }: { onRegister: () => void; productCount: number }) {
+  const heroImage = `${import.meta.env.BASE_URL}bot-hero.png`;
   return (
-    <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-white">
-      <motion.div animate={{ x: [0, 20, 0], y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-20%] left-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gray-200/50 rounded-full blur-[60px] sm:blur-[120px]" />
-      <motion.div animate={{ x: [0, -15, 0], y: [0, 20, 0] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-10%] right-[10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-gray-300/30 rounded-full blur-[50px] sm:blur-[100px]" />
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
+    <main id="home" className="hero section-shell">
+      <div className="hero-panel">
+        <img className="hero-image" src={heroImage} alt="ربات هوشمند بات‌زون" />
+        <div className="hero-overlay" />
+        <div className="hero-grid" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-5 sm:px-6 text-center pt-28 sm:pt-24 pb-12">
-        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[2.5rem] leading-[1.1] sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
-          <span className="text-gray-900">ربات‌های هوشمند</span>
-          <br />
-          <span className="bg-gradient-to-r from-gray-900 via-gray-500 to-gray-900 bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">برای سروش</span>
-        </motion.h1>
-
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="text-base sm:text-xl text-gray-500 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
-          بات‌زون، پلتفرم طراحی و توسعه ربات‌های حرفه‌ای روی پیام‌رسان سروش. ابزارهای قدرتمند، راه‌اندازی سریع، بدون پیچیدگی.
-        </motion.p>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 mb-8 sm:mb-16 px-2 sm:px-0">
-          <Link to="/signup" className="w-full sm:w-auto">
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-semibold text-white bg-gray-900 hover:bg-gray-800 px-6 sm:px-8 py-4 rounded-full shadow-xl touch-manipulation">
-              ثبت نام
-              <motion.svg animate={{ x: [0, -3, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></motion.svg>
-            </motion.button>
-          </Link>
-          <Link to="/login" className="w-full sm:w-auto">
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group w-full inline-flex items-center justify-center gap-2 text-[15px] sm:text-base font-medium text-gray-700 hover:text-gray-900 bg-white/80 backdrop-blur-xl hover:bg-white border border-black/[0.08] hover:border-black/[0.12] px-6 sm:px-8 py-4 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all touch-manipulation">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-              ورود
-            </motion.button>
-          </Link>
-        </motion.div>
-
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-32 bg-gradient-to-b from-transparent to-gray-100" />
-    </section>
-  );
-}
-
-function Features() {
-  const features = [
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />, title: "سرعت بالا", description: "پاسخگویی در کسری از ثانیه با زیرساخت پیشرفته و بهینه‌سازی شده برای عملکرد حداکثری." },
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />, title: "امنیت بالا", description: "رمزنگاری سرتاسری، کنترل دسترسی مبتنی بر نقش و ثبت کامل لاگ‌های فعالیت." },
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />, title: "توسعه‌دهنده محور", description: "APIهای جامع، مستندات کامل و ابزارهای یکپارچه‌سازی با سرویس‌های محبوب شما." },
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />, title: "آمار لحظه‌ای", description: "پیگیری عملکرد ربات‌ها با داشبوردهای سفارشی و نمایش داده‌ها به صورت زنده." },
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />, title: "مدیریت تیمی", description: "ابزارهای همکاری تیمی با فضای کار مشترک، نظرات و ویرایش همزمان." },
-    { icon: <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />, title: "مقیاس‌پذیری خودکار", description: "زیرساختی که به‌صورت خودکار برای مدیریت هر حجمی از ترافیک مقیاس‌بندی می‌شود." },
-  ];
-
-  return (
-    <section id="features" className="relative py-20 sm:py-32 bg-gray-100 overflow-hidden">
-      <motion.div animate={{ scale: [1, 1.15, 1], x: [0, 10, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute top-20 left-[20%] w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-white/60 to-gray-200/40 rounded-full blur-[60px] sm:blur-[100px]" />
-      <motion.div animate={{ scale: [1, 1.1, 1], x: [0, -15, 0] }} transition={{ duration: 11, repeat: Infinity }} className="absolute bottom-20 right-[15%] w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-gradient-to-tl from-gray-300/30 to-white/20 rounded-full blur-[60px] sm:blur-[120px]" />
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 relative z-10">
-        <motion.div {...fadeUp} className="text-center mb-12 sm:mb-20 px-2">
-          <span className="text-xs sm:text-sm font-semibold text-gray-400 tracking-widest mb-3 sm:mb-4 block">امکانات</span>
-          <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4 sm:mb-5 leading-tight">هر آنچه برای ساخت ربات نیاز دارید</h2>
-          <p className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto">امکانات قدرتمند برای توسعه سریع‌تر ربات‌های سروش.</p>
-        </motion.div>
-
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true, margin: "-80px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              variants={staggerItem}
-              whileHover={{ y: -6, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.08)" }}
-              className="group relative rounded-2xl bg-white/70 backdrop-blur-xl border border-black/[0.06] hover:border-black/10 hover:bg-white/90 p-8 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)]"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-900 shadow-lg mb-5 text-white group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{feature.icon}</svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{feature.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-300" />
-    </section>
-  );
-}
-
-function Stats() {
-  const stats = [
-    {
-      value: "+۱ هزار",
-      label: "کاربر فعال",
-      icon: (
-        <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-      ),
-    },
-  ];
-
-  return (
-    <section className="relative py-16 sm:py-24 bg-gray-300 overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
-      <div className="max-w-7xl mx-auto px-6">
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          className="flex justify-center"
-        >
-          {stats.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              variants={staggerItem}
-              custom={i}
-              whileHover={{ scale: 1.05 }}
-              className="text-center group"
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white border border-black/[0.06] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-gray-900 mb-4 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                  {stat.icon}
-                </svg>
-              </div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, type: "spring", stiffness: 120 }}
-                className="text-5xl sm:text-6xl font-bold text-gray-900 mb-3 tracking-tight"
-              >
-                {stat.value}
-              </motion.div>
-              <div className="text-base text-gray-600 font-medium tracking-wide">{stat.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-500" />
-    </section>
-  );
-}
-
-function Testimonials() {
-  const testimonials = [
-    { quote: "بات‌زون فرایند توسعه ربات‌های ما رو کاملاً متحول کرد. سه برابر سریع‌تر از حد انتظار ربات‌مون رو راه‌اندازی کردیم.", author: "مهدی احمدی", role: "مدیر فنی، تک‌نوآوران", avatar: "https://images.pexels.com/photos/7640741/pexels-photo-7640741.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
-    { quote: "بهترین تجربه توسعه‌ای که داشتم. انگار یه ابرقدرت برای ساخت ربات در اختیارتون قرار میده.", author: "سارا رضایی", role: "توسعه‌دهنده ارشد، دیجی‌سرویس", avatar: "https://images.pexels.com/photos/8837261/pexels-photo-8837261.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
-    { quote: "هزینه‌های زیرساختمون رو ۶۰ درصد کاهش دادیم و در عین حال عملکرد بهتری هم داریم. واقعاً عالیه.", author: "علی محمدی", role: "معاون مهندسی، آسان‌تک", avatar: "https://images.pexels.com/photos/18459701/pexels-photo-18459701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=100&w=100" },
-  ];
-
-  return (
-    <section id="about" className="relative py-20 sm:py-32 bg-gray-500">
-      <div className="max-w-7xl mx-auto px-6">
-        <motion.div {...fadeUp} className="text-center mb-16">
-          <span className="text-sm font-semibold text-gray-200 tracking-widest mb-4 block">نظرات مشتریان</span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-5">مورد اعتماد تیم‌های حرفه‌ای</h2>
-        </motion.div>
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <motion.div key={t.author} variants={staggerItem} whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.15)" }} className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-8">
-              <div className="flex gap-1 mb-4">{[...Array(5)].map((_, j) => <motion.svg key={j} initial={{ scale: 0 }} whileInView={{ scale: 1 }} transition={{ delay: i * 0.1 + j * 0.05 }} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></motion.svg>)}</div>
-              <p className="text-white/90 leading-relaxed mb-6 text-sm">"{t.quote}"</p>
-              <div className="flex items-center gap-3">
-                <img src={t.avatar} alt={t.author} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/20" />
-                <div><p className="text-white font-medium text-sm">{t.author}</p><p className="text-white/50 text-xs">{t.role}</p></div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-700" />
-    </section>
-  );
-}
-
-function CTA() {
-  return (
-    <section className="relative py-20 sm:py-32 bg-gray-700 overflow-hidden">
-      <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white/5 rounded-full blur-[120px]" />
-      <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 text-center">
-        <motion.h2 {...fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">آماده‌اید ربات<span className="block bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent">خودتون رو بسازید؟</span></motion.h2>
-        <motion.p {...fadeUp} transition={{ delay: 0.1 }} className="text-lg text-gray-300 mb-10 max-w-xl mx-auto">به هزاران تیمی بپیوندید که با بات‌زون سریع‌تر ربات می‌سازند. شروع رایگان — بدون نیاز به کارت بانکی.</motion.p>
-        <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 text-base font-semibold text-gray-900 bg-white hover:bg-gray-100 px-8 py-4 rounded-full shadow-xl">شروع رایگان <span className="group-hover:-translate-x-1 transition-transform">→</span></motion.button>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto text-base font-medium text-gray-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 px-8 py-4 rounded-full">تماس با فروش</motion.button>
-        </motion.div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-gray-900" />
-    </section>
-  );
-}
-
-function Footer({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const legalPages = ["حریم خصوصی", "قوانین استفاده", "امنیت", "کوکی‌ها"];
-  const companyLinks = [
-    { label: "درباره ما", to: "/about" },
-    { label: "وبلاگ", to: "/blog" },
-    { label: "فرصت‌های شغلی", to: "/careers" },
-    { label: "اخبار", to: "/news" },
-    { label: "همکاران", to: "/partners" },
-  ];
-  const footerLinks = {
-    "محصول": ["امکانات", "تعرفه‌ها", "یکپارچه‌سازی", "تغییرات", "مستندات"],
-    "شرکت": companyLinks.map(c => c.label),
-    "منابع": ["انجمن", "تماس با ما", "پشتیبانی", "وضعیت سرور", "API"],
-    "قوانین": legalPages,
-  };
-  return (
-    <footer className="relative bg-gray-900 pt-20 pb-10">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div className="max-w-7xl mx-auto px-6">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
-          <motion.div variants={staggerItem} className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 mb-4"><div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center"><svg className="w-4 h-4 text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg></div><span className="text-lg font-bold text-white">بات‌زون</span></Link>
-            <p className="text-sm text-gray-500 leading-relaxed">ساخت آینده‌ ربات‌ها، روی پیام‌رسان سروش.</p>
-          </motion.div>
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <motion.div key={category} variants={staggerItem}>
-              <h4 className="text-sm font-semibold text-white mb-4">{category}</h4>
-              <ul className="space-y-2.5">
-                {links.map((link) => {
-                  if (link === "پشتیبانی") return <li key={link}><a href="https://sapp.ir/Veltorix" target="_blank" className="text-sm text-gray-500 hover:text-gray-300 inline-flex gap-1.5">پشتیبانی <span className="text-xs text-gray-600" dir="ltr">@Veltorix</span></a></li>;
-                  if (legalPages.includes(link)) return <li key={link}><button onClick={() => onOpenLegal(link)} className="text-sm text-gray-500 hover:text-gray-300">{link}</button></li>;
-                  const company = companyLinks.find(c => c.label === link);
-                  if (company) return <li key={link}><Link to={company.to} className="text-sm text-gray-500 hover:text-gray-300">{link}</Link></li>;
-                  return <li key={link}><span className="text-sm text-gray-500 hover:text-gray-300">{link}</span></li>;
-                })}
-              </ul>
-            </motion.div>
-          ))}
-        </motion.div>
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
-          <p className="text-xs text-gray-600">© ۱۴۰۵ بات‌زون. تمامی حقوق محفوظ است.</p>
-          <div className="flex items-center gap-4">
-            {["𝕏", "GH", "IN"].map((s) => <div key={s} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 text-xs hover:text-white hover:bg-white/10 transition-colors cursor-pointer">{s}</div>)}
+        <div className="hero-copy">
+          <div className="eyebrow light"><span className="pulse-dot" /> بازار شماره یک ابزارهای هوشمند</div>
+          <h1>یک ربات،<br /><span>هزار راهِ رشد.</span></h1>
+          <p>ربات‌ها و آیتم‌های آماده‌ای که فروش، پشتیبانی و مدیریت کسب‌وکارت را ساده‌تر و سریع‌تر می‌کنند.</p>
+          <div className="hero-actions">
+            <button onClick={onRegister} className="primary-hero-button"><UserPlus size={18} /> ساخت حساب رایگان</button>
+            <a href="#market" className="ghost-hero-button"><span className="play-dot"><ShoppingBag size={15} /></span> مشاهده فروشگاه</a>
+          </div>
+          <div className="hero-proof">
+            <div className="avatar-stack" aria-hidden="true">
+              <span>م</span><span>س</span><span>ع</span><span>+</span>
+            </div>
+            <div><strong>بیش از ۲,۵۰۰ کاربر</strong><small>به بات‌زون اعتماد کرده‌اند</small></div>
           </div>
         </div>
 
-        {/* Made with love - gray text + red heart SVG */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-10 pt-6 border-t border-white/[0.03] flex items-center justify-center gap-2 text-[13px] text-gray-500"
-        >
-          <span>ساخته شده با</span>
-          <motion.span
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1 }}
-            className="inline-flex"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_2px_6px_rgba(239,68,68,0.4)]">
-              <path d="M12 21s-6.5-4.35-9.17-8.33A5.5 5.5 0 0112 6.5a5.5 5.5 0 019.17 6.17C18.5 16.65 12 21 12 21z" />
-            </svg>
-          </motion.span>
-          <span>برای شما</span>
-        </motion.div>
+        <div className="floating-card hero-rating">
+          <span className="float-icon"><Star size={18} fill="currentColor" /></span>
+          <div><strong>۴.۹ از ۵</strong><small>رضایت کاربران</small></div>
+        </div>
+        <div className="floating-card hero-support">
+          <span className="float-icon mint"><Headphones size={18} /></span>
+          <div><strong>پشتیبانی واقعی</strong><small>هر روز، کنار شما</small></div>
+        </div>
       </div>
+
+      <div className="hero-stats">
+        <div><strong>{formatNumber(productCount)}</strong><span>محصول منتشرشده</span></div>
+        <i />
+        <div><strong>+۲,۵۰۰</strong><span>مشتری راضی</span></div>
+        <i />
+        <div><strong>٪۹۸</strong><span>رضایت از خرید</span></div>
+        <i />
+        <div><strong>۲۴/۷</strong><span>پشتیبانی فنی</span></div>
+      </div>
+    </main>
+  );
+}
+
+function CategoryStrip({ products }: { products: Product[] }) {
+  return (
+    <section className="categories section-shell reveal" aria-label="دسته‌بندی‌ها">
+      <div className="section-kicker"><LayoutGrid size={17} /> دسته‌بندی‌های فروشگاه</div>
+      <div className="category-grid">
+        {categories.map(({ title, icon: Icon, tone, matches }) => (
+          <a href="#market" className="category-card" key={title}>
+            <span className={`category-icon ${tone}`}><Icon size={25} /></span>
+            <span className="category-info"><strong>{title}</strong><small>{formatNumber(products.filter(matches).length)} محصول</small></span>
+            <span className="category-arrow"><ArrowUpLeft size={18} /></span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductCard({
+  product,
+  favorite,
+  onFavorite,
+  onAdd,
+}: {
+  product: Product;
+  favorite: boolean;
+  onFavorite: () => void;
+  onAdd: () => void;
+}) {
+  const ProductIcon = product.icon;
+  const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0;
+
+  return (
+    <article className="product-card">
+      <div className={`product-visual ${product.tone}`}>
+        <div className="visual-orbit orbit-one" />
+        <div className="visual-orbit orbit-two" />
+        <span className="product-big-icon"><ProductIcon size={52} strokeWidth={1.45} /></span>
+        <span className="mini-cube cube-one"><Sparkles size={15} /></span>
+        <span className="mini-cube cube-two"><Zap size={14} /></span>
+        {product.badge && <span className="product-badge">{product.badge}</span>}
+        <button onClick={onFavorite} className={`favorite-button ${favorite ? "selected" : ""}`} aria-label="افزودن به علاقه‌مندی">
+          <Heart size={19} fill={favorite ? "currentColor" : "none"} />
+        </button>
+      </div>
+
+      <div className="product-body">
+        <div className="product-meta">
+          <span><Tag size={13} /> {product.category}</span>
+          <span className="rating"><Star size={13} fill="currentColor" /> {product.rating.toLocaleString("fa-IR")} <i>({formatNumber(product.reviews)})</i></span>
+        </div>
+        <h3>{product.title}</h3>
+        <p>{product.subtitle}</p>
+        <div className="product-bottom">
+          <div className="price-wrap">
+            {product.oldPrice && <span className="old-price">{formatNumber(product.oldPrice)}</span>}
+            <span className="current-price">{formatNumber(product.price)} <small>تومان</small></span>
+          </div>
+          <button className="add-button" onClick={onAdd} aria-label={`افزودن ${product.title} به سبد`}>
+            <ShoppingBag size={19} />
+          </button>
+        </div>
+        {discount > 0 && <span className="discount">٪{formatNumber(discount)} تخفیف</span>}
+      </div>
+    </article>
+  );
+}
+
+function Marketplace({ products, loading, onAdd, search, setSearch }: { products: Product[]; loading: boolean; onAdd: (product: Product) => void; search: string; setSearch: (value: string) => void }) {
+  const [filter, setFilter] = useState<"all" | "bot" | "item">("all");
+  const [favorites, setFavorites] = useState<Set<number>>(() => new Set());
+
+  const filteredProducts = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    return products.filter((product) => {
+      const inTab = filter === "all" || product.type === filter;
+      const inSearch = !normalized || `${product.title} ${product.subtitle} ${product.category}`.toLowerCase().includes(normalized);
+      return inTab && inSearch;
+    });
+  }, [filter, products, search]);
+
+  const toggleFavorite = (id: number) => {
+    setFavorites((current) => {
+      const next = new Set(current);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <section className="market section-shell reveal" id="market">
+      <div className="section-heading">
+        <div>
+          <div className="eyebrow"><Sparkles size={16} /> انتخاب‌های حرفه‌ای</div>
+          <h2>محصولات <span>فروشگاه</span></h2>
+          <p>ربات‌ها و آیتم‌های منتشرشده توسط تیم بات‌زون.</p>
+        </div>
+        <a href="#market" className="view-all">مشاهده همه محصولات <ArrowLeft size={18} /></a>
+      </div>
+
+      <div className="market-toolbar">
+        <div className="filter-tabs">
+          <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><LayoutGrid size={17} /> همه محصولات</button>
+          <button className={filter === "bot" ? "active" : ""} onClick={() => setFilter("bot")}><Bot size={17} /> ربات‌ها</button>
+          <button className={filter === "item" ? "active" : ""} onClick={() => setFilter("item")}><Box size={17} /> آیتم‌ها</button>
+        </div>
+        <label className="market-search">
+          <Search size={18} />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="جستجوی محصول..." />
+          {search && <button onClick={() => setSearch("")}><X size={16} /></button>}
+        </label>
+      </div>
+
+      {loading ? (
+        <div className="empty-products catalog-loading">
+          <span><LoaderCircle className="spinner" size={30} /></span>
+          <h3>در حال دریافت فروشگاه</h3>
+          <p>محصولات در حال بارگذاری هستند.</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
+        <div className="product-grid">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              favorite={favorites.has(product.id)}
+              onFavorite={() => toggleFavorite(product.id)}
+              onAdd={() => onAdd(product)}
+            />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="empty-products store-empty">
+          <span><Package size={30} /></span>
+          <h3>فروشگاه هنوز محصولی ندارد</h3>
+          <p>محصولات جدید به‌زودی از پنل مدیریت منتشر می‌شوند.</p>
+        </div>
+      ) : (
+        <div className="empty-products">
+          <span><Search size={30} /></span>
+          <h3>محصولی پیدا نشد</h3>
+          <p>عبارت دیگری را امتحان کنید یا فیلتر را تغییر دهید.</p>
+          <button onClick={() => { setSearch(""); setFilter("all"); }}>پاک کردن فیلترها</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WhyUs() {
+  const benefits = [
+    { icon: ShieldCheck, title: "خرید امن و مطمئن", text: "پرداخت امن و تضمین بازگشت وجه تا ۷ روز" },
+    { icon: WandSparkles, title: "نصب رایگان", text: "راه‌اندازی اولیه توسط تیم فنی بات‌زون" },
+    { icon: Clock3, title: "تحویل فوری", text: "دسترسی به فایل‌ها بلافاصله پس از خرید" },
+    { icon: Headphones, title: "پشتیبانی همیشگی", text: "پاسخ‌گویی سریع قبل و بعد از خرید" },
+  ];
+
+  return (
+    <section className="why section-shell reveal" id="why-us">
+      <div className="why-card">
+        <div className="why-intro">
+          <div className="eyebrow light"><BadgeCheck size={16} /> خرید بدون دغدغه</div>
+          <h2>چرا حرفه‌ای‌ها<br />بات‌زون را انتخاب می‌کنند؟</h2>
+          <p>از انتخاب محصول تا راه‌اندازی و رشد، تیم ما در تمام مسیر کنار شماست.</p>
+          <a href="#footer">مشاوره رایگان <ArrowLeft size={18} /></a>
+        </div>
+        <div className="benefits-grid">
+          {benefits.map(({ icon: Icon, title, text }) => (
+            <div className="benefit" key={title}>
+              <span><Icon size={24} /></span>
+              <div><h3>{title}</h3><p>{text}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setSent(true);
+    setEmail("");
+  };
+
+  return (
+    <section className="newsletter section-shell reveal">
+      <div className="newsletter-card">
+        <div className="newsletter-glow" />
+        <div className="newsletter-copy">
+          <span><Send size={22} /></span>
+          <div><h2>از تازه‌های بات‌زون جا نمانید</h2><p>تخفیف‌ها و محصولات جدید، مستقیم در ایمیل شما.</p></div>
+        </div>
+        {sent ? (
+          <div className="success-message"><Check size={20} /> ایمیل شما با موفقیت ثبت شد.</div>
+        ) : (
+          <form onSubmit={submit}>
+            <Mail size={19} />
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ایمیل شما" aria-label="ایمیل شما" required />
+            <button>عضویت</button>
+          </form>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer id="footer" className="reveal">
+      <div className="footer-main section-shell">
+        <div className="footer-brand">
+          <Logo />
+          <p>بازار تخصصی ربات‌ها و ابزارهای دیجیتال؛ برای ساختن کسب‌وکاری هوشمندتر.</p>
+          <div className="socials">
+            <a href="#footer" aria-label="اینستاگرام"><Instagram size={19} /></a>
+            <a href="#footer" aria-label="تلگرام"><Send size={18} /></a>
+            <a href="#footer" aria-label="گفتگو"><MessageCircle size={19} /></a>
+          </div>
+        </div>
+        <div className="footer-links"><h3>فروشگاه</h3><a href="#market">ربات‌ها</a><a href="#market">آیتم‌ها</a><a href="#market">جدیدترین‌ها</a><a href="#market">پرفروش‌ها</a></div>
+        <div className="footer-links"><h3>بات‌زون</h3><a href="#why-us">درباره ما</a><a href="#footer">همکاری با ما</a><a href="#footer">وبلاگ</a><a href="#footer">قوانین استفاده</a></div>
+        <div className="footer-contact"><h3>نیاز به راهنمایی دارید؟</h3><a href="tel:02191000000"><span><Headphones size={20} /></span><div><small>هر روز از ۹ تا ۲۱</small><strong>۰۲۱ - ۹۱۰۰ ۰۰۰۰</strong></div></a></div>
+      </div>
+      <div className="footer-bottom section-shell"><span>© ۱۴۰۵ بات‌زون؛ همه حقوق محفوظ است.</span><span>ساخته شده با <Heart size={14} fill="currentColor" /> برای کسب‌وکارهای ایرانی</span></div>
     </footer>
   );
 }
 
-const legalContent: Record<string, { title: string; sections: { heading: string; body: string }[] }> = {
-  "حریم خصوصی": { title: "سیاست حریم خصوصی", sections: [{ heading: "جمع‌آوری اطلاعات", body: "بات‌زون اطلاعات شخصی شما شامل نام، آدرس ایمیل و شماره تلفن را هنگام ثبت‌نام جمع‌آوری می‌کند." }, { heading: "استفاده از اطلاعات", body: "اطلاعات برای بهبود خدمات و پشتیبانی فنی استفاده می‌شود." }, { heading: "حفاظت از داده‌ها", body: "تمامی داده‌ها با پروتکل‌های رمزنگاری پیشرفته محافظت می‌شوند." }, { heading: "حقوق کاربران", body: "شما حق دسترسی و حذف اطلاعات خود را دارید." }] },
-  "قوانین استفاده": { title: "قوانین و شرایط استفاده", sections: [{ heading: "پذیرش شرایط", body: "با استفاده از خدمات بات‌زون، موافقت خود را با قوانین اعلام می‌کنید." }, { heading: "استفاده مجاز", body: "ربات‌ها باید مطابق قوانین ایران و سروش باشند." }, { heading: "مسئولیت‌ها", body: "هر کاربر مسئول ربات خود می‌باشد." }, { heading: "تعلیق حساب", body: "حق تعلیق حساب‌های متخلف محفوظ است." }] },
-  "امنیت": { title: "سیاست امنیتی", sections: [{ heading: "رمزنگاری داده‌ها", body: "ارتباطات با TLS 1.3 و AES-256 رمزنگاری می‌شود." }, { heading: "احراز هویت", body: "از احراز هویت چند مرحله‌ای پشتیبانی می‌کنیم." }, { heading: "نظارت و پایش", body: "سیستم‌ها ۲۴ ساعته نظارت می‌شوند." }, { heading: "گزارش آسیب‌پذیری", body: "از طریق پشتیبانی گزارش دهید." }] },
-  "کوکی‌ها": { title: "سیاست کوکی‌ها", sections: [{ heading: "کوکی چیست؟", body: "فایل‌های متنی کوچک در مرورگر شما." }, { heading: "کوکی‌های ضروری", body: "برای عملکرد صحیح الزامی هستند." }, { heading: "کوکی‌های تحلیلی", body: "برای تحلیل استفاده کاربران." }, { heading: "مدیریت کوکی‌ها", body: "می‌توانید از طریق مرورگر مدیریت کنید." }] },
-};
+function CartDrawer({ lines, open, onClose, onChange, onRemove }: { lines: CartLine[]; open: boolean; onClose: () => void; onChange: (id: number, change: number) => void; onRemove: (id: number) => void }) {
+  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
 
-function LegalModal({ page, onClose }: { page: string; onClose: () => void }) {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="relative w-full max-w-2xl max-h-[85vh] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/[0.02]"><h2 className="text-xl font-bold text-white">{legalContent[page]?.title}</h2><button onClick={onClose} className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400">✕</button></div>
-        <div className="px-8 py-6 overflow-y-auto max-h-[calc(85vh-80px)] space-y-6">
-          {legalContent[page]?.sections.map((s, i) => <div key={i}><h3 className="text-white font-semibold mb-2">{i + 1}. {s.heading}</h3><p className="text-sm text-gray-400 leading-7">{s.body}</p></div>)}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function NotFoundPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  return (
-    <div className="relative min-h-screen bg-white overflow-hidden flex flex-col">
-      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/50 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-gray-300/30 rounded-full blur-[100px]" />
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-32 text-center">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 120 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-500 mb-8">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> خطای ۴۰۴ — صفحه یافت نشد
-        </motion.div>
-        <motion.div initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.2 }} className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white border border-black/[0.06] shadow-[0_16px_48px_rgba(0,0,0,0.08)] flex items-center justify-center mb-8">
-          <span className="text-5xl sm:text-6xl font-black bg-gradient-to-br from-gray-900 via-gray-600 to-gray-400 bg-clip-text text-transparent">۴۰۴</span>
-        </motion.div>
-        <motion.h1 {...fadeUp} className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-4">صفحه مورد نظر<br /><span className="bg-gradient-to-r from-gray-500 via-gray-900 to-gray-500 bg-clip-text text-transparent">پیدا نشد</span></motion.h1>
-        <motion.p {...fadeUp} transition={{ delay: 0.1 }} className="text-base sm:text-lg text-gray-500 max-w-md mx-auto mb-3">متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد.</motion.p>
-        <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="mb-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.06] text-xs font-mono text-gray-500"><span dir="ltr">{location.pathname}</span></motion.div>
-        <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-3">
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate("/")} className="text-sm font-semibold text-white bg-gray-900 px-7 py-3.5 rounded-full shadow-xl">بازگشت به خانه</motion.button>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="text-sm font-medium text-gray-600 bg-black/[0.04] border border-black/[0.06] px-7 py-3.5 rounded-full">بازگشت قبل</motion.button>
-        </motion.div>
-      </div>
-    </div>
-  );
-}
-
-function PageHero({ title, subtitle, badge }: { title: string; subtitle: string; badge: string }) {
-  return (
-    <section className="relative pt-36 pb-20 bg-white overflow-hidden">
-      <motion.div animate={{ x: [0, 15, 0], y: [0, -10, 0] }} transition={{ duration: 7, repeat: Infinity }} className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] bg-gray-200/40 rounded-full blur-[120px]" />
-      <motion.div animate={{ x: [0, -10, 0], y: [0, 15, 0] }} transition={{ duration: 8, repeat: Infinity }} className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] bg-gray-300/20 rounded-full blur-[100px]" />
-      <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-medium text-gray-600 mb-6"><span className="w-2 h-2 rounded-full bg-gray-900" />{badge}</motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.7 }} className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">{title}</motion.h1>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }} className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">{subtitle}</motion.p>
-      </div>
-    </section>
-  );
-}
-
-function AboutPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  return (
-    <PageTransition>
-      <PageHero badge="شرکت" title="درباره بات‌زون" subtitle="ما آینده‌ ربات‌های سروش را می‌سازیم — ساده، سریع و امن" />
-      <section className="py-20 bg-gray-50 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-          <motion.div {...fadeUp}><h2 className="text-3xl font-bold mb-4">ماموریت ما</h2><p className="text-gray-500 leading-7">بات‌زون در ۱۴۰۳ با هدف ساده‌سازی توسعه ربات روی سروش آغاز شد. امروز بیش از ۳۰۰ ربات فعال داریم.</p></motion.div>
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="rounded-2xl bg-white border p-8 shadow-xl grid grid-cols-2 gap-6 text-center">
-            <div><div className="text-3xl font-bold">۱۴۰۳</div><div className="text-xs text-gray-500">سال تأسیس</div></div>
-            <div><div className="text-3xl font-bold">۱۲ نفر</div><div className="text-xs text-gray-500">اعضای تیم</div></div>
-            <div><div className="text-3xl font-bold">+۳۰۰</div><div className="text-xs text-gray-500">ربات فعال</div></div>
-            <div><div className="text-3xl font-bold">۹۹.۹۹٪</div><div className="text-xs text-gray-500">آپتایم</div></div>
-          </motion.div>
-        </div>
-      </section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function BlogPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const posts = [
-    { title: "چگونه ربات سروش بسازیم؟ راهنمای کامل ۱۴۰۴", date: "۲۱ مرداد ۱۴۰۴", tag: "آموزش" },
-    { title: "۵ ترفند برای افزایش سرعت ربات‌ها", date: "۱۵ مرداد ۱۴۰۴", tag: "بهینه‌سازی" },
-    { title: "معرفی نسخه ۲.۰ بات‌زون", date: "۱۰ مرداد ۱۴۰۴", tag: "اخبار" },
-    { title: "امنیت ربات‌ها: بهترین شیوه‌ها", date: "۵ مرداد ۱۴۰۴", tag: "امنیت" },
-    { title: "مقایسه بات‌زون با رقبا", date: "۱ مرداد ۱۴۰۴", tag: "بررسی" },
-    { title: "ساخت فروشگاه رباتیک", date: "۲۸ تیر ۱۴۰۴", tag: "کسب‌وکار" },
-  ];
-  return (
-    <PageTransition>
-      <PageHero badge="وبلاگ" title="وبلاگ بات‌زون" subtitle="آخرین آموزش‌ها و اخبار" />
-      <section className="py-16 bg-gray-50 border-t">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-5xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((p) => (
-            <motion.div key={p.title} variants={staggerItem} whileHover={{ y: -6 }} className="rounded-2xl bg-white border p-6 hover:shadow-xl transition-all">
-              <div className="flex justify-between mb-4"><span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{p.tag}</span><span className="text-xs text-gray-400">{p.date}</span></div>
-              <h3 className="font-semibold leading-relaxed">{p.title}</h3>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function CareersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const jobs = [
-    { role: "مهندس بک‌اند (Node.js)", type: "تمام‌وقت • ریموت", loc: "تهران / ریموت" },
-    { role: "طراح محصول UI/UX", type: "تمام‌وقت • حضوری", loc: "تهران" },
-    { role: "متخصص DevOps", type: "پاره‌وقت • ریموت", loc: "ریموت" },
-    { role: "پشتیبان فنی", type: "تمام‌وقت • ریموت", loc: "ریموت" },
-  ];
-  return (
-    <PageTransition>
-      <PageHero badge="فرصت‌های شغلی" title="به تیم ما بپیوندید" subtitle="افراد باانگیزه برای ساخت آینده‌ ربات‌ها" />
-      <section className="py-16 bg-gray-50 border-t">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-4xl mx-auto px-6 space-y-4">
-          {jobs.map((job) => (
-            <motion.div key={job.role} variants={staggerItem} whileHover={{ scale: 1.01 }} className="flex flex-col sm:flex-row justify-between gap-4 rounded-2xl bg-white border p-6">
-              <div><h3 className="font-semibold">{job.role}</h3><div className="flex gap-2 mt-2"><span className="text-xs px-3 py-1 rounded-full bg-black/[0.04] border">{job.type}</span><span className="text-xs px-3 py-1 rounded-full bg-white border">{job.loc}</span></div></div>
-              <button className="text-sm bg-gray-900 text-white px-5 py-2.5 rounded-full">ارسال رزومه</button>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function NewsPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const news = [
-    { date: "۲۲ مرداد ۱۴۰۴", title: "بات‌زون به ۳۰۰ ربات فعال رسید", desc: "رشد ۱۲۰٪ در ۶ ماه." },
-    { date: "۱۸ مرداد ۱۴۰۴", title: "همکاری با سروش برای API جدید", desc: "دسترسی سریع‌تر." },
-    { date: "۱۰ مرداد ۱۴۰۴", title: "داشبورد جدید آنالیتیکس", desc: "آمار لحظه‌ای پیشرفته." },
-  ];
-  return (
-    <PageTransition>
-      <PageHero badge="اخبار" title="آخرین اخبار" subtitle="به‌روزرسانی‌ها و دستاوردها" />
-      <section className="py-16 bg-gray-50 border-t"><div className="max-w-3xl mx-auto px-6 border-r border-black/10 pr-8 space-y-12">{news.map((n, i) => <motion.div key={n.title} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="relative"><div className="absolute -right-[37px] w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white" /><div className="text-xs text-gray-400">{n.date}</div><h3 className="font-semibold text-lg">{n.title}</h3><p className="text-sm text-gray-500 mt-2">{n.desc}</p></motion.div>)}</div></section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function PartnersPage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
-  const partners = ["سروش", "تک‌نوآوران", "دیجی‌سرویس", "آسان‌تک", "ابرآروان", "پارس‌پک"];
-  return (
-    <PageTransition>
-      <PageHero badge="همکاران" title="همکاران ما" subtitle="سازمان‌هایی که به بات‌زون اعتماد کرده‌اند" />
-      <section className="py-16 bg-gray-50 border-t">
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-6">
-          {partners.map((name) => <motion.div key={name} variants={staggerItem} whileHover={{ y: -4, scale: 1.02 }} className="rounded-2xl bg-white/70 backdrop-blur-xl border border-black/[0.06] p-8 h-32 flex items-center justify-center hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:bg-white/90 transition-all"><span className="font-bold text-gray-400">{name}</span></motion.div>)}
-        </motion.div>
-      </section>
-      <Footer onOpenLegal={onOpenLegal} />
-    </PageTransition>
-  );
-}
-
-function AuthPageLayout({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return (
-    <div className="relative min-h-screen flex items-center justify-center bg-white overflow-hidden px-4 py-20">
-      {/* Blur blobs */}
-      <motion.div animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[10%] left-[15%] w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-gradient-to-br from-gray-200/60 to-gray-300/40 rounded-full blur-[120px]" />
-      <motion.div animate={{ x: [0, -20, 0], y: [0, 25, 0] }} transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[5%] right-[10%] w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-gradient-to-tr from-gray-100/80 to-gray-200/50 rounded-full blur-[130px]" />
-      <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 8, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-gradient-to-r from-violet-100/20 via-gray-100/30 to-blue-100/20 rounded-full blur-[150px]" />
-      
-      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.15) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
-
-      <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="relative z-10 w-full max-w-md">
-        <div className="rounded-[32px] bg-white/70 backdrop-blur-2xl border border-black/[0.06] shadow-[0_20px_60px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] p-2">
-          <div className="rounded-[24px] bg-white border border-black/[0.04] shadow-sm p-8">
-            <div className="text-center mb-8">
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 120, delay: 0.2 }} className="w-14 h-14 rounded-full bg-gray-900 mx-auto flex items-center justify-center mb-4 shadow-lg">
-                <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
-              </motion.div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
-              <p className="text-sm text-gray-500">{subtitle}</p>
-            </div>
-            {children}
-          </div>
-        </div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6 text-center text-xs text-gray-400">
-          با ادامه، شما با <Link to="/" className="text-gray-600 hover:text-gray-900 underline">قوانین استفاده</Link> و <Link to="/" className="text-gray-600 hover:text-gray-900 underline">حریم خصوصی</Link> موافقت می‌کنید
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
-
-function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const { setUser } = useAuth();
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setGoogleLoading(true);
-      try {
-        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        });
-        const data = await res.json();
-        setUser({ name: data.name, email: data.email, picture: data.picture });
-        navigate("/");
-      } catch (e) {
-        alert("خطا در ورود با گوگل");
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: () => {
-      alert("ورود با گوگل لغو شد یا خطایی رخ داد");
-      setGoogleLoading(false);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      // Mock login - you can replace with real API
-      setUser({ name: "کاربر تست", email: email });
-      navigate("/");
-    }, 1200);
-  };
-
-  const clientIdExists = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) && (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) !== "YOUR_GOOGLE_CLIENT_ID_HERE";
-
-  return (
-    <AuthPageLayout title="خوش آمدید" subtitle="وارد حساب بات‌زون خود شوید">
-      {!clientIdExists && (
-        <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed">
-          ⚠️ برای فعال‌سازی ورود با گوگل، باید <code className="bg-amber-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> را در فایل <code>.env</code> تنظیم کنید. آموزش پایین را ببینید.
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="text-xs font-medium text-gray-600 mb-2 block">ایمیل</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" type="email" placeholder="you@example.com" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور</label>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required />
-        </div>
-        <div className="flex items-center justify-between text-xs">
-          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="rounded" /> <span className="text-gray-500">مرا به خاطر بسپار</span></label>
-          <a href="#" className="text-gray-600 hover:text-gray-900 font-medium">فراموشی رمز؟</a>
-        </div>
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit" disabled={loading} className="w-full py-3.5 rounded-full bg-gray-900 hover:bg-black text-white text-sm font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center gap-2">
-          {loading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : null}
-          {loading ? "در حال ورود..." : "ورود"}
-        </motion.button>
-        <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/[0.06]" /></div><div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">یا</span></div></div>
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="button" onClick={() => googleLogin()} disabled={googleLoading} className="w-full py-3 rounded-full bg-white border border-black/[0.08] hover:bg-gray-50 hover:border-black/[0.12] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-60">
-          {googleLoading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full" /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>}
-          {googleLoading ? "در حال اتصال..." : "ورود با گوگل"}
-        </motion.button>
-        <p className="text-center text-xs text-gray-500 mt-6">حساب ندارید؟ <Link to="/signup" className="font-semibold text-gray-900 hover:text-black underline">ثبت نام کنید</Link></p>
-      </form>
-    </AuthPageLayout>
-  );
-}
-
-function SignupPage() {
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
-
-  const googleSignup = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setGoogleLoading(true);
-      try {
-        const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        });
-        const data = await res.json();
-        setUser({ name: data.name, email: data.email, picture: data.picture });
-        navigate("/");
-      } catch {
-        alert("خطا در ثبت نام با گوگل");
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: () => setGoogleLoading(false),
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const form = e.target as HTMLFormElement;
-      const email = (form.elements.namedItem("email") as HTMLInputElement)?.value || "user@example.com";
-      setUser({ name: "کاربر جدید", email });
-      navigate("/");
-    }, 1300);
-  };
-
-  const clientIdExists = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) && (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) !== "YOUR_GOOGLE_CLIENT_ID_HERE";
-
-  return (
-    <AuthPageLayout title="ساخت حساب" subtitle="به جمع ۱۰۰۰+ کاربر بات‌زون بپیوندید">
-      {!clientIdExists && (
-        <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed">
-          ⚠️ برای فعال‌سازی ثبت نام با گوگل، <code className="bg-amber-100 px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> را تنظیم کنید.
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام</label><input type="text" placeholder="مهدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-          <div><label className="text-xs font-medium text-gray-600 mb-2 block">نام خانوادگی</label><input type="text" placeholder="احمدی" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-        </div>
-        <div><label className="text-xs font-medium text-gray-600 mb-2 block">ایمیل</label><input name="email" dir="ltr" type="email" placeholder="you@example.com" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-        <div><label className="text-xs font-medium text-gray-600 mb-2 block">رمز عبور</label><input dir="ltr" type="password" placeholder="حداقل ۸ کاراکتر" className="w-full px-4 py-3 rounded-full bg-gray-50 border border-black/[0.06] focus:bg-white focus:border-black/20 focus:outline-none focus:ring-4 focus:ring-black/[0.04] text-sm transition-all" required /></div>
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit" disabled={loading} className="w-full py-3.5 rounded-full bg-gray-900 hover:bg-black text-white text-sm font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center gap-2">
-          {loading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : null}
-          {loading ? "در حال ساخت..." : "ثبت نام"}
-        </motion.button>
-        <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/[0.06]" /></div><div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">یا</span></div></div>
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="button" onClick={() => googleSignup()} disabled={googleLoading} className="w-full py-3 rounded-full bg-white border border-black/[0.08] hover:bg-gray-50 text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-all">
-          {googleLoading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full" /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>}
-          {googleLoading ? "در حال اتصال..." : "ثبت نام با گوگل"}
-        </motion.button>
-        <p className="text-center text-xs text-gray-500 mt-6">قبلاً حساب دارید؟ <Link to="/login" className="font-semibold text-gray-900 hover:text-black underline">وارد شوید</Link></p>
-      </form>
-    </AuthPageLayout>
-  );
-}
-
-function HomePage({ onOpenLegal }: { onOpenLegal: (page: string) => void }) {
   return (
     <>
-      <Hero />
-      <Features />
-      <Stats />
-      <Testimonials />
-      <CTA />
-      <Footer onOpenLegal={onOpenLegal} />
+      <div className={`overlay ${open ? "visible" : ""}`} onClick={onClose} />
+      <aside className={`cart-drawer ${open ? "open" : ""}`} aria-hidden={!open}>
+        <div className="drawer-head"><div><ShoppingCart size={21} /><h2>سبد خرید</h2><span>{formatNumber(lines.reduce((sum, item) => sum + item.quantity, 0))} محصول</span></div><button onClick={onClose}><X size={21} /></button></div>
+        <div className="drawer-content">
+          {lines.length === 0 ? (
+            <div className="empty-cart"><span><ShoppingBag size={34} /></span><h3>سبد خرید شما خالی است</h3><p>یک محصول کاربردی برای شروع انتخاب کنید.</p><button onClick={onClose}>رفتن به فروشگاه</button></div>
+          ) : lines.map(({ product, quantity }) => {
+            const Icon = product.icon;
+            return (
+              <div className="cart-line" key={product.id}>
+                <span className={`cart-thumb ${product.tone}`}><Icon size={25} /></span>
+                <div className="cart-info"><h3>{product.title}</h3><span>{formatNumber(product.price)} تومان</span><div className="quantity"><button onClick={() => onChange(product.id, 1)}><Plus size={14} /></button><strong>{formatNumber(quantity)}</strong><button onClick={() => onChange(product.id, -1)}><Minus size={14} /></button></div></div>
+                <button className="remove-line" onClick={() => onRemove(product.id)}><Trash2 size={18} /></button>
+              </div>
+            );
+          })}
+        </div>
+        {lines.length > 0 && (
+          <div className="drawer-footer">
+            <div><span>مبلغ نهایی</span><strong>{formatNumber(subtotal)} <small>تومان</small></strong></div>
+            <button>ادامه فرایند خرید <ArrowLeft size={18} /></button>
+            <p><ShieldCheck size={15} /> پرداخت امن و تضمین بازگشت وجه</p>
+          </div>
+        )}
+      </aside>
     </>
   );
 }
 
-function AnimatedRoutes({ onOpenLegal }: { onOpenLegal: (p: string) => void }) {
-  const location = useLocation();
+function AuthModal({
+  mode,
+  onClose,
+  onModeChange,
+  onAuthenticated,
+}: {
+  mode: AuthMode;
+  onClose: () => void;
+  onModeChange: (mode: AuthMode) => void;
+  onAuthenticated: (user: AuthUser, mode: AuthMode) => void;
+}) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => setError(""), [mode]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+    if (mode === "register" && name.trim().length < 2) {
+      setError("لطفاً نام و نام خانوادگی خود را وارد کنید.");
+      return;
+    }
+    if (contact.trim().length < 5) {
+      setError("شماره موبایل یا ایمیل معتبر وارد کنید.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("رمز عبور باید حداقل ۶ کاراکتر باشد.");
+      return;
+    }
+    setLoading(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    onAuthenticated({ name: mode === "register" ? name.trim() : "کاربر بات‌زون", contact: contact.trim() }, mode);
+    setLoading(false);
+  };
+
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><HomePage onOpenLegal={onOpenLegal} /></PageTransition>} />
-        <Route path="/about" element={<AboutPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/blog" element={<BlogPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/careers" element={<CareersPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/news" element={<NewsPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/partners" element={<PartnersPage onOpenLegal={onOpenLegal} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </AnimatePresence>
+    <div className="modal-layer" role="dialog" aria-modal="true" aria-label={mode === "login" ? "ورود به حساب" : "ساخت حساب"}>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="login-modal auth-modal">
+        <button className="modal-close" onClick={onClose} aria-label="بستن"><X size={20} /></button>
+        <div className="auth-header">
+          <span className="modal-logo"><Bot size={28} /></span>
+          <div><h2>{mode === "login" ? "خوش برگشتی!" : "به بات‌زون بپیوند"}</h2><p>{mode === "login" ? "وارد حساب خود شوید و ادامه دهید." : "در کمتر از یک دقیقه حساب رایگان بسازید."}</p></div>
+        </div>
+
+        <div className="auth-tabs" role="tablist">
+          <button className={mode === "login" ? "active" : ""} onClick={() => onModeChange("login")}><LogIn size={17} /> ورود</button>
+          <button className={mode === "register" ? "active" : ""} onClick={() => onModeChange("register")}><UserPlus size={17} /> ثبت‌نام</button>
+        </div>
+
+        <form className="auth-form" onSubmit={submit}>
+          <div className={`auth-fields ${mode}`} key={mode}>
+            {mode === "register" && (
+              <label className="field">
+                <span>نام و نام خانوادگی</span>
+                <div className="input-shell"><UserRound size={18} /><input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="مثلاً علی رضایی" autoComplete="name" /></div>
+              </label>
+            )}
+            <label className="field">
+              <span>شماره موبایل یا ایمیل</span>
+              <div className="input-shell"><Phone size={18} /><input autoFocus={mode === "login"} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="۰۹۱۲۱۲۳۴۵۶۷" autoComplete="username" /></div>
+            </label>
+            <label className="field">
+              <span>رمز عبور</span>
+              <div className="input-shell"><LockKeyhole size={18} /><input type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="حداقل ۶ کاراکتر" autoComplete={mode === "login" ? "current-password" : "new-password"} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label="نمایش رمز">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
+            </label>
+          </div>
+
+          <div className="form-options">
+            <label className="remember"><input type="checkbox" defaultChecked /><span><Check size={12} /></span>{mode === "login" ? "مرا به خاطر بسپار" : "قوانین بات‌زون را می‌پذیرم"}</label>
+            {mode === "login" && <button type="button" className="forgot-link">رمز را فراموش کرده‌اید؟</button>}
+          </div>
+          {error && <div className="form-error">{error}</div>}
+          <button className="submit-auth" disabled={loading}>
+            {loading ? <><LoaderCircle className="spinner" size={19} /> کمی صبر کنید...</> : <>{mode === "login" ? "ورود به حساب" : "ساخت حساب رایگان"}<ArrowLeft size={18} /></>}
+          </button>
+        </form>
+
+        <div className="auth-trust"><ShieldCheck size={16} /><span>اطلاعات شما با رمزگذاری امن نگهداری می‌شود</span></div>
+        <p className="auth-switch">{mode === "login" ? "هنوز حساب ندارید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}<button onClick={() => onModeChange(mode === "login" ? "register" : "login")}>{mode === "login" ? "ثبت‌نام رایگان" : "وارد شوید"}</button></p>
+      </div>
+    </div>
   );
 }
 
-export default function App() {
-  const [legalPage, setLegalPage] = useState<string | null>(null);
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? window.scrollY / max : 0);
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  return <div className="scroll-progress" style={{ transform: `scaleX(${progress})` }} />;
+}
+
+function App() {
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("botzone_theme");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem("botzone_session");
+      return saved ? JSON.parse(saved) as AuthUser : null;
+    } catch {
+      return null;
+    }
+  });
+  const [search, setSearch] = useState("");
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(isBackendConfigured);
+  const [toast, setToast] = useState("");
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem("botzone_theme", theme);
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = theme === "dark" ? "#0c0d12" : "#f6f7fb";
+  }, [theme]);
+
+  useEffect(() => {
+    if (!isBackendConfigured) {
+      setCatalogLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const loadCatalog = async () => {
+      try {
+        const data = await listPublicProducts();
+        if (!cancelled) setCatalogProducts(data.map(toProduct));
+      } catch {
+        if (!cancelled) setCatalogProducts([]);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    };
+    void loadCatalog();
+    window.addEventListener("focus", loadCatalog);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", loadCatalog);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = cartOpen || authMode ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [cartOpen, authMode]);
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -45px" });
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2600);
+  };
+
+  const addToCart = (product: Product) => {
+    setCart((current) => {
+      const existing = current.find((line) => line.product.id === product.id);
+      if (existing) return current.map((line) => line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line);
+      return [...current, { product, quantity: 1 }];
+    });
+    showToast(`${product.title} به سبد خرید اضافه شد`);
+  };
+
+  const changeQuantity = (id: number, change: number) => {
+    setCart((current) => current
+      .map((line) => line.product.id === id ? { ...line, quantity: line.quantity + change } : line)
+      .filter((line) => line.quantity > 0));
+  };
+
+  const authenticate = (candidate: AuthUser, mode: AuthMode) => {
+    let authenticated = candidate;
+    if (mode === "register") {
+      localStorage.setItem("botzone_profile", JSON.stringify(candidate));
+    } else {
+      try {
+        const profile = localStorage.getItem("botzone_profile");
+        const parsed = profile ? JSON.parse(profile) as AuthUser : null;
+        if (parsed?.contact === candidate.contact) authenticated = parsed;
+      } catch {
+        // Continue with a generic account when no local profile exists.
+      }
+    }
+    localStorage.setItem("botzone_session", JSON.stringify(authenticated));
+    setUser(authenticated);
+    setAuthMode(null);
+    showToast(mode === "register" ? "حساب شما با موفقیت ساخته شد" : "با موفقیت وارد حساب شدید");
+  };
+
+  const logout = () => {
+    localStorage.removeItem("botzone_session");
+    setUser(null);
+    showToast("از حساب خود خارج شدید");
+  };
+
   return (
-    <BrowserRouter basename="/BotZone">
-      <div className="antialiased overflow-x-hidden">
-        <ScrollProgress />
-        <Navbar />
-        <AnimatedRoutes onOpenLegal={(p) => setLegalPage(p)} />
-        <AnimatePresence>
-          {legalPage && <LegalModal page={legalPage} onClose={() => setLegalPage(null)} />}
-        </AnimatePresence>
-      </div>
-    </BrowserRouter>
+    <div className="app">
+      <ScrollProgress />
+      <Navbar
+        cartCount={cartCount}
+        onCart={() => setCartOpen(true)}
+        onLogin={() => setAuthMode("login")}
+        onRegister={() => setAuthMode("register")}
+        onLogout={logout}
+        onToggleTheme={() => setTheme((current) => current === "light" ? "dark" : "light")}
+        theme={theme}
+        user={user}
+        search={search}
+        setSearch={setSearch}
+      />
+      <Hero onRegister={() => setAuthMode("register")} productCount={catalogProducts.length} />
+      <CategoryStrip products={catalogProducts} />
+      <Marketplace products={catalogProducts} loading={catalogLoading} onAdd={addToCart} search={search} setSearch={setSearch} />
+      <WhyUs />
+      <Newsletter />
+      <Footer />
+      <CartDrawer lines={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={changeQuantity} onRemove={(id) => setCart((current) => current.filter((line) => line.product.id !== id))} />
+      {authMode && <AuthModal mode={authMode} onClose={() => setAuthMode(null)} onModeChange={setAuthMode} onAuthenticated={authenticate} />}
+      <div className={`toast ${toast ? "show" : ""}`}><Check size={17} /> {toast}</div>
+      <button className="support-fab" aria-label="پشتیبانی آنلاین"><CircleHelp size={23} /><span>پشتیبانی آنلاین</span><i /></button>
+    </div>
   );
 }
+
+export default App;
