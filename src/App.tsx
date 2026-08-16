@@ -12,17 +12,23 @@ import {
   CircleHelp,
   Clock3,
   CreditCard,
+  Eye,
+  EyeOff,
   Headphones,
   Heart,
   Instagram,
   LayoutGrid,
+  LoaderCircle,
+  LockKeyhole,
   LogIn,
+  LogOut,
   Mail,
   Menu,
   MessageCircle,
   Minus,
   Package,
   Palette,
+  Phone,
   Plus,
   Search,
   Send,
@@ -34,6 +40,7 @@ import {
   Store,
   Tag,
   Trash2,
+  UserPlus,
   UserRound,
   UsersRound,
   WandSparkles,
@@ -57,6 +64,8 @@ type Product = {
 };
 
 type CartLine = { product: Product; quantity: number };
+type AuthMode = "login" | "register";
+type AuthUser = { name: string; contact: string };
 
 const products: Product[] = [
   {
@@ -161,27 +170,35 @@ function Navbar({
   cartCount,
   onCart,
   onLogin,
+  onRegister,
+  onLogout,
+  user,
   search,
   setSearch,
 }: {
   cartCount: number;
   onCart: () => void;
   onLogin: () => void;
+  onRegister: () => void;
+  onLogout: () => void;
+  user: AuthUser | null;
   search: string;
   setSearch: (value: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const closeMenu = () => setMenuOpen(false);
+  const initial = user?.name.trim().charAt(0) || "ک";
 
   return (
     <header className={`nav-wrap ${scrolled ? "scrolled" : ""}`}>
@@ -205,10 +222,27 @@ function Navbar({
             <span className="cart-label">سبد خرید</span>
             {cartCount > 0 && <span className="cart-count">{formatNumber(cartCount)}</span>}
           </button>
-          <button className="login-button" onClick={onLogin}>
-            <UserRound size={18} />
-            <span>ورود</span>
-          </button>
+          {user ? (
+            <div className="user-menu-wrap">
+              <button className="user-chip" onClick={() => setAccountOpen((value) => !value)} aria-expanded={accountOpen}>
+                <span className="user-avatar">{initial}</span>
+                <span className="user-chip-copy"><small>حساب من</small><strong>{user.name}</strong></span>
+                <ChevronDown size={15} className={accountOpen ? "rotated" : ""} />
+              </button>
+              {accountOpen && (
+                <div className="account-dropdown">
+                  <div><span className="user-avatar large">{initial}</span><p><strong>{user.name}</strong><small>{user.contact}</small></p></div>
+                  <a href="#market" onClick={() => setAccountOpen(false)}><Package size={17} /> سفارش‌های من</a>
+                  <button onClick={() => { setAccountOpen(false); onLogout(); }}><LogOut size={17} /> خروج از حساب</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="desktop-auth">
+              <button className="login-button secondary" onClick={onLogin}>ورود</button>
+              <button className="register-button" onClick={onRegister}><UserPlus size={17} /> ثبت‌نام</button>
+            </div>
+          )}
           <button className="circle-button menu-toggle" onClick={() => setMenuOpen((value) => !value)} aria-label="منو">
             {menuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
@@ -230,19 +264,27 @@ function Navbar({
 
       {menuOpen && (
         <div className="mobile-menu">
+          {user && <div className="mobile-user"><span className="user-avatar">{initial}</span><div><strong>{user.name}</strong><small>{user.contact}</small></div></div>}
           <a href="#home" onClick={closeMenu}>خانه</a>
           <a href="#market" onClick={closeMenu}>فروشگاه ربات‌ها</a>
           <a href="#market" onClick={closeMenu}>فروشگاه آیتم</a>
           <a href="#why-us" onClick={closeMenu}>چرا بات‌زون؟</a>
           <a href="#footer" onClick={closeMenu}>پشتیبانی</a>
-          <button onClick={() => { closeMenu(); onLogin(); }}><LogIn size={18} /> ورود به حساب</button>
+          {user ? (
+            <button className="mobile-logout" onClick={() => { closeMenu(); onLogout(); }}><LogOut size={18} /> خروج از حساب</button>
+          ) : (
+            <div className="mobile-auth-row">
+              <button className="mobile-login" onClick={() => { closeMenu(); onLogin(); }}><LogIn size={18} /> ورود</button>
+              <button className="mobile-register" onClick={() => { closeMenu(); onRegister(); }}><UserPlus size={18} /> ثبت‌نام رایگان</button>
+            </div>
+          )}
         </div>
       )}
     </header>
   );
 }
 
-function Hero() {
+function Hero({ onRegister }: { onRegister: () => void }) {
   const heroImage = `${import.meta.env.BASE_URL}bot-hero.png`;
   return (
     <main id="home" className="hero section-shell">
@@ -256,8 +298,8 @@ function Hero() {
           <h1>یک ربات،<br /><span>هزار راهِ رشد.</span></h1>
           <p>ربات‌ها و آیتم‌های آماده‌ای که فروش، پشتیبانی و مدیریت کسب‌وکارت را ساده‌تر و سریع‌تر می‌کنند.</p>
           <div className="hero-actions">
-            <a href="#market" className="primary-hero-button">مشاهده فروشگاه <ArrowLeft size={19} /></a>
-            <a href="#why-us" className="ghost-hero-button"><span className="play-dot"><Zap size={15} fill="currentColor" /></span> چرا بات‌زون؟</a>
+            <button onClick={onRegister} className="primary-hero-button"><UserPlus size={18} /> ساخت حساب رایگان</button>
+            <a href="#market" className="ghost-hero-button"><span className="play-dot"><ShoppingBag size={15} /></span> مشاهده فروشگاه</a>
           </div>
           <div className="hero-proof">
             <div className="avatar-stack" aria-hidden="true">
@@ -292,7 +334,7 @@ function Hero() {
 
 function CategoryStrip() {
   return (
-    <section className="categories section-shell" aria-label="دسته‌بندی‌ها">
+    <section className="categories section-shell reveal" aria-label="دسته‌بندی‌ها">
       <div className="section-kicker"><LayoutGrid size={17} /> دسته‌بندی‌های محبوب</div>
       <div className="category-grid">
         {categories.map(({ title, count, icon: Icon, tone }) => (
@@ -379,7 +421,7 @@ function Marketplace({ onAdd, search, setSearch }: { onAdd: (product: Product) =
   };
 
   return (
-    <section className="market section-shell" id="market">
+    <section className="market section-shell reveal" id="market">
       <div className="section-heading">
         <div>
           <div className="eyebrow"><Sparkles size={16} /> انتخاب‌های حرفه‌ای</div>
@@ -435,7 +477,7 @@ function WhyUs() {
   ];
 
   return (
-    <section className="why section-shell" id="why-us">
+    <section className="why section-shell reveal" id="why-us">
       <div className="why-card">
         <div className="why-intro">
           <div className="eyebrow light"><BadgeCheck size={16} /> خرید بدون دغدغه</div>
@@ -468,7 +510,7 @@ function Newsletter() {
   };
 
   return (
-    <section className="newsletter section-shell">
+    <section className="newsletter section-shell reveal">
       <div className="newsletter-card">
         <div className="newsletter-glow" />
         <div className="newsletter-copy">
@@ -491,7 +533,7 @@ function Newsletter() {
 
 function Footer() {
   return (
-    <footer id="footer">
+    <footer id="footer" className="reveal">
       <div className="footer-main section-shell">
         <div className="footer-brand">
           <Logo />
@@ -545,54 +587,166 @@ function CartDrawer({ lines, open, onClose, onChange, onRemove }: { lines: CartL
   );
 }
 
-function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [mobile, setMobile] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+function AuthModal({
+  mode,
+  onClose,
+  onModeChange,
+  onAuthenticated,
+}: {
+  mode: AuthMode;
+  onClose: () => void;
+  onModeChange: (mode: AuthMode) => void;
+  onAuthenticated: (user: AuthUser, mode: AuthMode) => void;
+}) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const submit = (event: React.FormEvent) => {
+  useEffect(() => setError(""), [mode]);
+
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (mobile.trim()) setSubmitted(true);
+    setError("");
+    if (mode === "register" && name.trim().length < 2) {
+      setError("لطفاً نام و نام خانوادگی خود را وارد کنید.");
+      return;
+    }
+    if (contact.trim().length < 5) {
+      setError("شماره موبایل یا ایمیل معتبر وارد کنید.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("رمز عبور باید حداقل ۶ کاراکتر باشد.");
+      return;
+    }
+    setLoading(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    onAuthenticated({ name: mode === "register" ? name.trim() : "کاربر بات‌زون", contact: contact.trim() }, mode);
+    setLoading(false);
   };
 
-  if (!open) return null;
   return (
-    <div className="modal-layer">
+    <div className="modal-layer" role="dialog" aria-modal="true" aria-label={mode === "login" ? "ورود به حساب" : "ساخت حساب"}>
       <div className="modal-backdrop" onClick={onClose} />
-      <div className="login-modal">
-        <button className="modal-close" onClick={onClose}><X size={20} /></button>
-        <span className="modal-logo"><Bot size={29} /></span>
-        {!submitted ? (
-          <>
-            <h2>خوش آمدید 👋</h2>
-            <p>برای ورود یا ساخت حساب، شماره موبایل خود را وارد کنید.</p>
-            <form onSubmit={submit}>
-              <label>شماره موبایل</label>
-              <div className="phone-input"><span>+۹۸</span><input autoFocus value={mobile} onChange={(event) => setMobile(event.target.value)} inputMode="tel" placeholder="۹۱۲ ۱۲۳ ۴۵۶۷" required /></div>
-              <button>دریافت کد ورود <ArrowLeft size={18} /></button>
-            </form>
-            <small>با ورود، قوانین و حریم خصوصی بات‌زون را می‌پذیرید.</small>
-          </>
-        ) : (
-          <div className="login-success"><span><Check size={28} /></span><h2>کد ارسال شد</h2><p>کد ورود برای شماره واردشده ارسال شد.</p><button onClick={onClose}>متوجه شدم</button></div>
-        )}
+      <div className="login-modal auth-modal">
+        <button className="modal-close" onClick={onClose} aria-label="بستن"><X size={20} /></button>
+        <div className="auth-header">
+          <span className="modal-logo"><Bot size={28} /></span>
+          <div><h2>{mode === "login" ? "خوش برگشتی!" : "به بات‌زون بپیوند"}</h2><p>{mode === "login" ? "وارد حساب خود شوید و ادامه دهید." : "در کمتر از یک دقیقه حساب رایگان بسازید."}</p></div>
+        </div>
+
+        <div className="auth-tabs" role="tablist">
+          <button className={mode === "login" ? "active" : ""} onClick={() => onModeChange("login")}><LogIn size={17} /> ورود</button>
+          <button className={mode === "register" ? "active" : ""} onClick={() => onModeChange("register")}><UserPlus size={17} /> ثبت‌نام</button>
+        </div>
+
+        <form className="auth-form" onSubmit={submit}>
+          <div className={`auth-fields ${mode}`} key={mode}>
+            {mode === "register" && (
+              <label className="field">
+                <span>نام و نام خانوادگی</span>
+                <div className="input-shell"><UserRound size={18} /><input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="مثلاً علی رضایی" autoComplete="name" /></div>
+              </label>
+            )}
+            <label className="field">
+              <span>شماره موبایل یا ایمیل</span>
+              <div className="input-shell"><Phone size={18} /><input autoFocus={mode === "login"} value={contact} onChange={(event) => setContact(event.target.value)} placeholder="۰۹۱۲۱۲۳۴۵۶۷" autoComplete="username" /></div>
+            </label>
+            <label className="field">
+              <span>رمز عبور</span>
+              <div className="input-shell"><LockKeyhole size={18} /><input type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="حداقل ۶ کاراکتر" autoComplete={mode === "login" ? "current-password" : "new-password"} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label="نمایش رمز">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
+            </label>
+          </div>
+
+          <div className="form-options">
+            <label className="remember"><input type="checkbox" defaultChecked /><span><Check size={12} /></span>{mode === "login" ? "مرا به خاطر بسپار" : "قوانین بات‌زون را می‌پذیرم"}</label>
+            {mode === "login" && <button type="button" className="forgot-link">رمز را فراموش کرده‌اید؟</button>}
+          </div>
+          {error && <div className="form-error">{error}</div>}
+          <button className="submit-auth" disabled={loading}>
+            {loading ? <><LoaderCircle className="spinner" size={19} /> کمی صبر کنید...</> : <>{mode === "login" ? "ورود به حساب" : "ساخت حساب رایگان"}<ArrowLeft size={18} /></>}
+          </button>
+        </form>
+
+        <div className="auth-trust"><ShieldCheck size={16} /><span>اطلاعات شما با رمزگذاری امن نگهداری می‌شود</span></div>
+        <p className="auth-switch">{mode === "login" ? "هنوز حساب ندارید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}<button onClick={() => onModeChange(mode === "login" ? "register" : "login")}>{mode === "login" ? "ثبت‌نام رایگان" : "وارد شوید"}</button></p>
       </div>
     </div>
   );
 }
 
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? window.scrollY / max : 0);
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  return <div className="scroll-progress" style={{ transform: `scaleX(${progress})` }} />;
+}
+
 function App() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem("botzone_session");
+      return saved ? JSON.parse(saved) as AuthUser : null;
+    } catch {
+      return null;
+    }
+  });
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
-    document.body.style.overflow = cartOpen || loginOpen ? "hidden" : "";
+    document.body.style.overflow = cartOpen || authMode ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [cartOpen, loginOpen]);
+  }, [cartOpen, authMode]);
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -45px" });
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2600);
+  };
 
   const addToCart = (product: Product) => {
     setCart((current) => {
@@ -600,8 +754,7 @@ function App() {
       if (existing) return current.map((line) => line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line);
       return [...current, { product, quantity: 1 }];
     });
-    setToast(`${product.title} به سبد خرید اضافه شد`);
-    window.setTimeout(() => setToast(""), 2600);
+    showToast(`${product.title} به سبد خرید اضافه شد`);
   };
 
   const changeQuantity = (id: number, change: number) => {
@@ -610,17 +763,52 @@ function App() {
       .filter((line) => line.quantity > 0));
   };
 
+  const authenticate = (candidate: AuthUser, mode: AuthMode) => {
+    let authenticated = candidate;
+    if (mode === "register") {
+      localStorage.setItem("botzone_profile", JSON.stringify(candidate));
+    } else {
+      try {
+        const profile = localStorage.getItem("botzone_profile");
+        const parsed = profile ? JSON.parse(profile) as AuthUser : null;
+        if (parsed?.contact === candidate.contact) authenticated = parsed;
+      } catch {
+        // Continue with a generic account when no local profile exists.
+      }
+    }
+    localStorage.setItem("botzone_session", JSON.stringify(authenticated));
+    setUser(authenticated);
+    setAuthMode(null);
+    showToast(mode === "register" ? "حساب شما با موفقیت ساخته شد" : "با موفقیت وارد حساب شدید");
+  };
+
+  const logout = () => {
+    localStorage.removeItem("botzone_session");
+    setUser(null);
+    showToast("از حساب خود خارج شدید");
+  };
+
   return (
     <div className="app">
-      <Navbar cartCount={cartCount} onCart={() => setCartOpen(true)} onLogin={() => setLoginOpen(true)} search={search} setSearch={setSearch} />
-      <Hero />
+      <ScrollProgress />
+      <Navbar
+        cartCount={cartCount}
+        onCart={() => setCartOpen(true)}
+        onLogin={() => setAuthMode("login")}
+        onRegister={() => setAuthMode("register")}
+        onLogout={logout}
+        user={user}
+        search={search}
+        setSearch={setSearch}
+      />
+      <Hero onRegister={() => setAuthMode("register")} />
       <CategoryStrip />
       <Marketplace onAdd={addToCart} search={search} setSearch={setSearch} />
       <WhyUs />
       <Newsletter />
       <Footer />
       <CartDrawer lines={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={changeQuantity} onRemove={(id) => setCart((current) => current.filter((line) => line.product.id !== id))} />
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      {authMode && <AuthModal mode={authMode} onClose={() => setAuthMode(null)} onModeChange={setAuthMode} onAuthenticated={authenticate} />}
       <div className={`toast ${toast ? "show" : ""}`}><Check size={17} /> {toast}</div>
       <button className="support-fab" aria-label="پشتیبانی آنلاین"><CircleHelp size={23} /><span>پشتیبانی آنلاین</span><i /></button>
     </div>
