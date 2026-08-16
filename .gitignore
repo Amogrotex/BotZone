@@ -1,22 +1,8 @@
 node_modules/
 dist/
+*.tsbuildinfo
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 .DS_Store
-
-# Backend secrets - cloners can't access
-server/.env
-server/uploads/
-server/storage/
-server/*.log
-server/dist/
-
-# Private uploads
-uploads/
-storage/
-private/
-secrets/
-
-# OS
-Thumbs.db
+*.log
