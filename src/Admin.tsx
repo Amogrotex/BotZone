@@ -26,27 +26,24 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import {
+  adminSignIn,
+  adminSignOut,
+  deleteAdminProduct,
+  isBackendConfigured,
+  listAdminProducts,
+  saveAdminProduct,
+  updateAdminProduct,
+  verifyAdminAccess,
+  type BackendProduct,
+  type BackendProductDraft,
+} from "./lib/backend";
 import "./admin.css";
 
 type Theme = "light" | "dark";
-type AdminProduct = {
-  id: number;
-  title: string;
-  subtitle: string;
-  type: "bot" | "item";
-  category: string;
-  price: number;
-  old_price: number | null;
-  badge: string | null;
-  tone: "violet" | "blue" | "orange" | "pink" | "green" | "cyan";
-  rating: number;
-  reviews: number;
-  active: boolean;
-  created_at: string;
-};
+type AdminProduct = BackendProduct;
+type ProductDraft = BackendProductDraft;
 
-type ProductDraft = Omit<AdminProduct, "id" | "rating" | "reviews" | "created_at">;
 type AdminStage = "checking" | "login" | "dashboard";
 
 const emptyDraft: ProductDraft = {
@@ -80,21 +77,19 @@ function AdminLogin({ theme, onToggleTheme, onAuthenticated }: { theme: Theme; o
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!supabase || loading) return;
+    if (loading) return;
     setError("");
     setLoading(true);
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setPassword("");
-    if (loginError) {
+    try {
+      await adminSignIn(email.trim(), password);
+      setPassword("");
+      await onAuthenticated();
+    } catch {
+      setPassword("");
       setError("ایمیل یا رمز عبور صحیح نیست.");
+    } finally {
       setLoading(false);
-      return;
     }
-    await onAuthenticated();
-    setLoading(false);
   };
 
   return (
@@ -147,14 +142,14 @@ function ProductEditor({ product, onClose, onSaved }: { product: AdminProduct | 
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!supabase || saving) return;
+    if (saving) return;
     if (!draft.title.trim() || !draft.category.trim() || draft.price < 0) {
       setError("عنوان، دسته‌بندی و قیمت معتبر الزامی است.");
       return;
     }
     setSaving(true);
     setError("");
-    const payload = {
+    const payload: ProductDraft = {
       ...draft,
       title: draft.title.trim(),
       subtitle: draft.subtitle.trim(),
@@ -162,17 +157,15 @@ function ProductEditor({ product, onClose, onSaved }: { product: AdminProduct | 
       badge: draft.badge?.trim() || null,
       old_price: draft.old_price || null,
     };
-    const result = product
-      ? await supabase.from("products").update(payload).eq("id", product.id)
-      : await supabase.from("products").insert(payload);
-    if (result.error) {
+    try {
+      await saveAdminProduct(product?.id ?? null, payload);
+      await onSaved();
+      onClose();
+    } catch {
       setError("ذخیره محصول انجام نشد. مقادیر را بررسی کنید.");
+    } finally {
       setSaving(false);
-      return;
     }
-    await onSaved();
-    setSaving(false);
-    onClose();
   };
 
   return (
@@ -205,29 +198,36 @@ function AdminDashboard({ theme, onToggleTheme, onLogout }: { theme: Theme; onTo
   const [error, setError] = useState("");
 
   const loadProducts = useCallback(async () => {
-    if (!supabase) return;
     setLoading(true);
     setError("");
-    const { data, error: fetchError } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-    if (fetchError) setError("دریافت محصولات انجام نشد.");
-    else setProducts((data ?? []) as AdminProduct[]);
-    setLoading(false);
+    try {
+      setProducts(await listAdminProducts());
+    } catch {
+      setError("دریافت محصولات انجام نشد.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { void loadProducts(); }, [loadProducts]);
 
   const remove = async (product: AdminProduct) => {
-    if (!supabase || !window.confirm(`محصول «${product.title}» حذف شود؟`)) return;
-    const { error: deleteError } = await supabase.from("products").delete().eq("id", product.id);
-    if (deleteError) setError("حذف محصول انجام نشد.");
-    else await loadProducts();
+    if (!window.confirm(`محصول «${product.title}» حذف شود؟`)) return;
+    try {
+      await deleteAdminProduct(product.id);
+      await loadProducts();
+    } catch {
+      setError("حذف محصول انجام نشد.");
+    }
   };
 
   const toggleActive = async (product: AdminProduct) => {
-    if (!supabase) return;
-    const { error: updateError } = await supabase.from("products").update({ active: !product.active }).eq("id", product.id);
-    if (updateError) setError("تغییر وضعیت محصول انجام نشد.");
-    else await loadProducts();
+    try {
+      await updateAdminProduct(product.id, { active: !product.active });
+      await loadProducts();
+    } catch {
+      setError("تغییر وضعیت محصول انجام نشد.");
+    }
   };
 
   return (
@@ -272,7 +272,7 @@ function AdminSetup({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: () 
   return (
     <main className="admin-setup-page">
       <div className="admin-login-top"><a href={`${import.meta.env.BASE_URL}`}><ArrowLeft size={17} /> بازگشت به فروشگاه</a><ThemeButton theme={theme} onToggle={onToggleTheme} /></div>
-      <section><span><ShieldCheck size={32} /></span><h1>اتصال امن مدیریت آماده نیست</h1><p>متغیرهای عمومی Supabase باید هنگام ساخت سایت تنظیم شوند. هیچ رمز مدیریتی در فایل‌های سایت قرار نگرفته است.</p><div><code>VITE_SUPABASE_URL</code><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></div></section>
+      <section><span><ShieldCheck size={32} /></span><h1>اتصال امن مدیریت آماده نیست</h1><p>سرویس مدیریت باید هنگام ساخت سایت تنظیم شود. هیچ رمز مدیریتی در فایل‌های عمومی سایت قرار نمی‌گیرد.</p><div><code>VITE_BACKEND=cloudflare</code><code>یا اتصال امن Supabase</code></div></section>
     </main>
   );
 }
@@ -292,34 +292,22 @@ export default function AdminApp() {
   }, [theme]);
 
   const verifyAdmin = useCallback(async () => {
-    if (!supabase) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.user) {
-      setStage("login");
-      return;
-    }
-    const { data, error } = await supabase.from("admin_users").select("user_id").eq("user_id", sessionData.session.user.id).maybeSingle();
-    if (error || !data) {
-      await supabase.auth.signOut();
-      setStage("login");
-      return;
-    }
-    setStage("dashboard");
+    setStage(await verifyAdminAccess() ? "dashboard" : "login");
   }, []);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    if (!isBackendConfigured) return;
     void verifyAdmin();
   }, [verifyAdmin]);
 
   const logout = async () => {
-    if (supabase) await supabase.auth.signOut();
+    await adminSignOut();
     setStage("login");
   };
 
   const toggleTheme = () => setTheme((current) => current === "light" ? "dark" : "light");
 
-  if (!isSupabaseConfigured) return <AdminSetup theme={theme} onToggleTheme={toggleTheme} />;
+  if (!isBackendConfigured) return <AdminSetup theme={theme} onToggleTheme={toggleTheme} />;
   if (stage === "checking") return <div className="admin-boot"><LoaderCircle className="spinner" size={30} /><span>در حال بررسی دسترسی امن...</span></div>;
   if (stage === "login") return <AdminLogin theme={theme} onToggleTheme={toggleTheme} onAuthenticated={verifyAdmin} />;
   return <AdminDashboard theme={theme} onToggleTheme={toggleTheme} onLogout={logout} />;

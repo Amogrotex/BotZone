@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { supabase } from "./lib/supabase";
+import { isBackendConfigured, listPublicProducts, type BackendProduct } from "./lib/backend";
 import {
   ArrowLeft,
   ArrowUpLeft,
@@ -71,19 +71,7 @@ type AuthMode = "login" | "register";
 type AuthUser = { name: string; contact: string };
 type Theme = "light" | "dark";
 
-type ProductRow = {
-  id: number;
-  title: string;
-  subtitle: string;
-  type: "bot" | "item";
-  category: string;
-  price: number;
-  old_price: number | null;
-  rating: number;
-  reviews: number;
-  badge: string | null;
-  tone: string;
-};
+type ProductRow = BackendProduct;
 
 const iconForProduct = (row: ProductRow): LucideIcon => {
   if (row.category.includes("هوش")) return BrainCircuit;
@@ -701,7 +689,7 @@ function App() {
   });
   const [search, setSearch] = useState("");
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
-  const [catalogLoading, setCatalogLoading] = useState(Boolean(supabase));
+  const [catalogLoading, setCatalogLoading] = useState(isBackendConfigured);
   const [toast, setToast] = useState("");
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -715,17 +703,19 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    const client = supabase;
-    if (!client) {
+    if (!isBackendConfigured) {
       setCatalogLoading(false);
       return;
     }
     let cancelled = false;
     const loadCatalog = async () => {
-      const { data, error } = await client.from("products").select("id,title,subtitle,type,category,price,old_price,rating,reviews,badge,tone").eq("active", true).order("created_at", { ascending: false });
-      if (!cancelled) {
-        setCatalogProducts(error ? [] : ((data ?? []) as ProductRow[]).map(toProduct));
-        setCatalogLoading(false);
+      try {
+        const data = await listPublicProducts();
+        if (!cancelled) setCatalogProducts(data.map(toProduct));
+      } catch {
+        if (!cancelled) setCatalogProducts([]);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
       }
     };
     void loadCatalog();

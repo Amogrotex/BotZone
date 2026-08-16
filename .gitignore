@@ -6,3 +6,6 @@ dist/
 !.env.example
 .DS_Store
 *.log
+.dev.vars
+worker/.dev.vars
+worker/.wrangler/

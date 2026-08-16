@@ -3,8 +3,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  // GitHub Pages serves this repository from /BotZone/.
-  base: "/BotZone/",
+  // GitHub Pages uses /BotZone/; the Cloudflare workflow builds for root.
+  base: process.env.VITE_BASE_PATH || "/BotZone/",
   plugins: [react()],
   build: {
     outDir: "docs",
